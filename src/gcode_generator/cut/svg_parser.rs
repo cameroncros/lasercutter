@@ -1,9 +1,9 @@
 use crate::gcode_generator::cut::{Cut, Segment};
 use crate::types::Coord;
-use anyhow::bail;
+use anyhow::{bail, Context};
 use svg::node::element::path::{Command, Data};
-use svg::node::{Attributes, Value};
 use svg::node::element::tag::Type;
+use svg::node::{Attributes, Value};
 use svg::parser::Event;
 
 struct Transform {
@@ -22,7 +22,7 @@ impl Transform {
         Ok(t)
     }
 
-    fn apply(&self, coord: Coord) -> Coord {
+    fn apply(&self, coord: &Coord) -> Coord {
         let Coord(x, y) = coord;
         let Coord(ox, oy) = self.offset;
         Coord((self.rotate.0 * x + self.rotate.2 * x) + ox,
@@ -47,18 +47,21 @@ impl Cut {
         for command in data.iter() {
             match command {
                 Command::Move(_pos, params) => {
-                    position = transform.apply(Coord(params[0], params[1]));
+                    let coords = params.chunks(2).map(|f| Coord(f[0], f[1])).collect::<Vec<Coord>>();
+                    let first = coords.first().context("Missing first coordinate")?;
+                    position = transform.apply(first);
+                    for next_pos in coords[1..].iter() {
+                        let next = transform.apply(&next_pos);
+                        segments.push(Segment::Line(position, next));
+                        position = next;
+                    }
                 },
                 Command::Line(_pos, params) => {
-                    for next_pos in params.chunks(2) {
-                        match next_pos {
-                            &[next_x, next_y] => {
-                                let next = transform.apply(Coord(next_x, next_y));
-                                segments.push(Segment::Line(position, next));
-                                position = next;
-                            },
-                            _ => unreachable!(),
-                        }
+                    let coords = params.chunks(2).map(|f| Coord(f[0], f[1])).collect::<Vec<Coord>>();
+                    for next_pos in coords {
+                        let next = transform.apply(&next_pos);
+                        segments.push(Segment::Line(position, next));
+                        position = next;
                     }
                 },
                 Command::Close => {
