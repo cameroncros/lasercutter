@@ -56,7 +56,7 @@ impl GCodeEmulator {
             "G1" => {
                 /* Move to X/Y, with feed and power */
                 let (x, y, _, p) = parse_args(&parts[1..])?;
-                self.renderer.draw_line(self.state.pos, Coord(x, y), RenderSettings { color: "black".to_string(), thickness: 0.1, opacity: p/1000f32 })?;
+                self.renderer.draw_line(self.state.pos, Coord(x, y), RenderSettings { color: "green".to_string(), thickness: 0.1, opacity: p/1000f32 })?;
                 self.state.pos = Coord(x, y);
             }
             "G21" => { /* Set units to mm */ }

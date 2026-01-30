@@ -45,3 +45,21 @@ fn main() -> anyhow::Result<()>{
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::gcode_emulator::GCodeEmulator;
+    use crate::gcode_generator::cut::Cut;
+    use crate::gcode_generator::workspace::Workspace;
+
+    #[test]
+    fn end_to_end_test() {
+        let mut w = Workspace::init(100.0, 100.0);
+        w.add_cut(Cut::from_svg("resources/box-all.svg").unwrap());
+        w.gen_gcode().unwrap().save("out.gcode").unwrap();
+
+        let mut gce = GCodeEmulator::load("out.gcode").unwrap();
+        gce.run().unwrap();
+        gce.save("out.svg").unwrap()
+    }
+}
