@@ -3,7 +3,7 @@ use crate::types::{Coord, MachineState};
 mod svg_parser;
 
 #[derive(Clone)]
-pub enum Segments {
+pub enum Segment {
     Line(Coord, Coord),
     Curve
 }
@@ -12,7 +12,7 @@ pub enum Segments {
 pub struct Cut {
     pub origin: Coord,
     pub rotation: f32,
-    pub cuts: Vec<Segments>
+    pub cuts: Vec<Segment>
 }
 
 impl Cut {
@@ -20,7 +20,7 @@ impl Cut {
         let mut gcode = vec![];
         for cut in self.cuts.iter() {
             match cut {
-                Segments::Line(start, end) => {
+                Segment::Line(start, end) => {
                     if *start != machine_state.pos {
                         if machine_state.e {
                             gcode.push("M5".to_string());
@@ -45,7 +45,7 @@ impl Cut {
                     gcode.push(move_gcode);
                     machine_state.pos = *end;
                 }
-                Segments::Curve => {}
+                Segment::Curve => {}
             }
         }
 

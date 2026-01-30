@@ -1,4 +1,4 @@
-use crate::gcode_generator::cut::{Cut, Segments};
+use crate::gcode_generator::cut::{Cut, Segment};
 use crate::types::Coord;
 use anyhow::bail;
 use svg::node::element::path::{Command, Data};
@@ -37,7 +37,7 @@ impl Default for Transform {
 }
 
 impl Cut {
-    fn from_svg_path(attributes: &Attributes, transform: &Transform) -> anyhow::Result<Vec<Segments>> {
+    fn from_svg_path(attributes: &Attributes, transform: &Transform) -> anyhow::Result<Vec<Segment>> {
         let mut segments = vec![];
         let Some(data) = attributes.get("d") else {
             bail!("Missing path data");
@@ -54,14 +54,30 @@ impl Cut {
                         match next_pos {
                             &[next_x, next_y] => {
                                 let next = transform.apply(Coord(next_x, next_y));
-                                segments.push(Segments::Line(position, next));
+                                segments.push(Segment::Line(position, next));
                                 position = next;
                             },
                             _ => unreachable!(),
                         }
                     }
                 },
-                Command::Close => {}
+                Command::Close => {
+                    let Some(last) = segments.last() else {
+                        bail!("Missing last segment");
+                    };
+                    let Some(first) = segments.first() else {
+                        bail!("Missing first segment");
+                    };
+                    let first_pos = match first {
+                        Segment::Line(f, _) => {f}
+                        Segment::Curve => {unimplemented!()}
+                    };
+                    let last_pos = match last {
+                        Segment::Line(_, l) => {l}
+                        Segment::Curve => {unimplemented!()}
+                    };
+                    segments.push(Segment::Line(*last_pos, *first_pos));
+                }
                 e => { bail!("Unknown command: {e:?}"); }
             }
         }
