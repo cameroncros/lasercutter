@@ -1,26 +1,35 @@
-use crate::gcode_emulator::renderer::{RenderSettings, Renderer};
-use crate::types::Coord;
-use anyhow::bail;
 use std::sync::Mutex;
-use svg::node::element::path::Data;
-use svg::node::element::Path;
-use svg::Document;
+
+use anyhow::bail;
+use svg::{
+    Document,
+    node::element::{Path, path::Data},
+};
+
+use crate::{
+    gcode_emulator::renderer::{RenderSettings, Renderer},
+    types::coord::Coord,
+};
 
 pub struct SvgRenderer {
-    document: Mutex<Option<Document>>
+    document: Mutex<Option<Document>>,
 }
 
 impl SvgRenderer {
     pub(crate) fn new() -> Self {
-        let document = Document::new()
-            .set("viewBox", (0, 0, 700, 700));
+        let document = Document::new().set("viewBox", (0, 0, 700, 700));
         SvgRenderer {
-            document: Mutex::new(Some(document))
+            document: Mutex::new(Some(document)),
         }
     }
 }
 impl Renderer for SvgRenderer {
-    fn draw_line(&mut self, start: Coord, end: Coord, render: RenderSettings) -> anyhow::Result<()> {
+    fn draw_line(
+        &mut self,
+        start: Coord,
+        end: Coord,
+        render: RenderSettings,
+    ) -> anyhow::Result<()> {
         match self.document.lock() {
             Ok(mut dg) => {
                 if let Some(document) = dg.take() {
@@ -40,8 +49,8 @@ impl Renderer for SvgRenderer {
                 } else {
                     bail!("Document is not set");
                 }
-            },
-            Err(_) => bail!("Failed to lock document")
+            }
+            Err(_) => bail!("Failed to lock document"),
         }
         Ok(())
     }
@@ -54,8 +63,8 @@ impl Renderer for SvgRenderer {
                 } else {
                     bail!("Document is not set");
                 }
-            },
-            Err(_) => bail!("Failed to lock document")
+            }
+            Err(_) => bail!("Failed to lock document"),
         }
         Ok(())
     }

@@ -1,0 +1,30 @@
+{
+  "machine_settings": {
+    "min_pos": [
+      0.0,
+      0.0
+    ],
+    "max_pos": [
+      100.0,
+      100.0
+    ]
+  },
+  "items": [
+    {
+      "source": "resources/test_cases.svg",
+      "transform": {
+        "rotate": [
+          1.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "offset": [
+          0.0,
+          0.0
+        ]
+      },
+      "cuts": "Y+diCNlyyJ5daP6XgynLBS9t3zmZk2dTxXYnZzDsWlBquDTz41kGs3m/uV2kLm23/LvDzNHRydHJyQlTE4c3B0SbM6amuSrZEG1OAA=="
+    }
+  ]
+}

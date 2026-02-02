@@ -1,4 +1,4 @@
-use crate::types::Coord;
+use crate::types::coord::Coord;
 
 pub struct RenderSettings {
     pub color: String,
@@ -7,7 +7,8 @@ pub struct RenderSettings {
 }
 
 pub trait Renderer {
-    fn draw_line(&mut self, start: Coord, end: Coord, render: RenderSettings) -> anyhow::Result<()>;
+    fn draw_line(&mut self, start: Coord, end: Coord, render: RenderSettings)
+    -> anyhow::Result<()>;
 
     fn save(&mut self, file: &str) -> anyhow::Result<()>;
 }

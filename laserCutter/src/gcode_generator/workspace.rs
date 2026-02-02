@@ -1,22 +1,46 @@
-use crate::gcode_generator::cut::Cut;
-use crate::types::{Coord, GCode, MachineState};
+use std::{
+    fs::File,
+    io::{BufReader, BufWriter},
+};
 
-pub struct Segments {}
+use anyhow::Context;
+use serde::{Deserialize, Serialize};
 
+use crate::{
+    gcode_generator::cut::Cut,
+    types::{
+        coord::Coord,
+        gcode::GCode,
+        machine_settings::{MachineSettings, MachineState},
+    },
+};
 
+#[derive(Serialize, Deserialize)]
 pub struct Workspace {
-    pub width: f32,
-    pub height: f32,
-    pub items: Vec<Cut>
+    pub machine_settings: MachineSettings,
+    pub items: Vec<Cut>,
 }
 
 impl Workspace {
     pub fn init(width: f32, height: f32) -> Workspace {
         Workspace {
-            width,
-            height,
-            items: vec![]
+            machine_settings: MachineSettings::init(width, height),
+            items: vec![],
         }
+    }
+
+    pub fn load(file_name: &str) -> anyhow::Result<Workspace> {
+        let file = File::open(file_name).context("Failed to open file")?;
+        let workspace: Workspace =
+            serde_json::from_reader(BufReader::new(file)).context("Failed to parse file")?;
+        Ok(workspace)
+    }
+
+    pub fn save(&self, file_name: &str) -> anyhow::Result<()> {
+        let file = File::create(file_name).context("Failed to open file")?;
+        serde_json::to_writer_pretty(&mut BufWriter::new(file), self)
+            .context("Failed to write file")?;
+        Ok(())
     }
 
     pub(crate) fn add_cut(&mut self, cut: Cut) {
@@ -48,8 +72,7 @@ impl Workspace {
 
 #[cfg(test)]
 mod tests {
-    use crate::gcode_generator::cut::Cut;
-    use crate::gcode_generator::workspace::Workspace;
+    use crate::gcode_generator::{cut::Cut, workspace::Workspace};
 
     #[test]
     fn test_gen_gcode() {
