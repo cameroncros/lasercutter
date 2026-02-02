@@ -97,6 +97,8 @@ impl Cut {
         for segment in self.cuts.iter() {
             match segment {
                 Segment::Line(start, end) => {
+                    let start = self.transform.apply(start);
+                    let end = self.transform.apply(end);
                     min.0 = min.0.min(start.0);
                     min.0 = min.0.min(end.0);
                     min.1 = min.1.min(start.1);

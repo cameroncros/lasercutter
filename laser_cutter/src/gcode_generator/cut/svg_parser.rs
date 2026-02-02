@@ -2,7 +2,6 @@ use anyhow::{Context, bail};
 use svg::{
     node::{
         Attributes,
-        Value,
         element::{
             path::{Command, Data},
             tag::Type,
@@ -15,26 +14,6 @@ use crate::{
     gcode_generator::cut::{Cut, Segment},
     types::{coord::Coord, transform::Transform},
 };
-
-impl TryFrom<&Value> for Transform {
-    type Error = anyhow::Error;
-
-    fn try_from(value: &Value) -> Result<Self, Self::Error> {
-        let str = value.to_string();
-        let t = str
-            .replace("matrix(", "")
-            .replace(")", "")
-            .replace(",", " ")
-            .split_whitespace()
-            .map(|s| s.parse::<f32>())
-            .collect::<Result<Vec<_>, _>>()
-            .map(|v| Transform {
-                rotate: (v[0], v[1], v[2], v[3]),
-                offset: Coord(v[4], v[5]),
-            })?;
-        Ok(t)
-    }
-}
 
 impl Cut {
     fn from_svg_path(

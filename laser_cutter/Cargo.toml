@@ -12,6 +12,7 @@ bitcode = { version = "0.6.9", features = ["serde"] }
 base64 = "0.22.1"
 deflate = "1.0.0"
 inflate = "0.4.5"
+nalgebra = "0.34.1"
 
 [dev-dependencies]
 test-case = "3.3.1"
