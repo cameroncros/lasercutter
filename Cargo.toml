@@ -1,5 +1,5 @@
 [workspace]
 resolver = "3"
-members = [
-    "laserCutter",
+members = ["laser_cli",
+    "laser_cutter",
 ]

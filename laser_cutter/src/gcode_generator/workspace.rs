@@ -43,11 +43,14 @@ impl Workspace {
         Ok(())
     }
 
-    pub(crate) fn add_cut(&mut self, cut: Cut) {
+    pub fn add_cut(&mut self, mut cut: Cut) {
+        let (min, _) = cut.bounds();
+        cut.transform.offset.0 = -min.0;
+        cut.transform.offset.1 = -min.1;
         self.items.push(cut);
     }
 
-    pub(crate) fn gen_gcode(&self) -> anyhow::Result<GCode> {
+    pub fn gen_gcode(&self) -> anyhow::Result<GCode> {
         let mut items = self.items.clone();
         let mut gcode = vec![
             "G21         ; Set units to mm".to_string(),

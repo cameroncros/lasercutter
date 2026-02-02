@@ -3,16 +3,10 @@ use std::fmt::{Display, Formatter};
 use anyhow::bail;
 use clap::Parser;
 use dialoguer::Select;
-
-use crate::{
+use laser_cutter::{
     gcode_emulator::GCodeEmulator,
     gcode_generator::{cut::Cut, workspace::Workspace},
 };
-
-mod gcode_emulator;
-
-mod gcode_generator;
-mod types;
 
 /// Simple program to greet a person
 #[derive(Parser, Debug)]
@@ -137,12 +131,11 @@ fn main() -> anyhow::Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use test_case::test_case;
-
-    use crate::{
+    use laser_cutter::{
         gcode_emulator::GCodeEmulator,
         gcode_generator::{cut::Cut, workspace::Workspace},
     };
+    use test_case::test_case;
 
     #[test_case("box-all")]
     #[test_case("test_cases")]

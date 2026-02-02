@@ -56,13 +56,15 @@ impl Cut {
         for cut in self.cuts.iter() {
             match cut {
                 Segment::Line(start, end) => {
-                    if *start != machine_state.pos {
+                    let start = self.transform.apply(start);
+                    let end = self.transform.apply(end);
+                    if start != machine_state.pos {
                         if machine_state.e {
                             gcode.push("M5".to_string());
                             machine_state.e = false;
                         }
                         gcode.push(format!("G0 X{} Y{}", start.0, start.1));
-                        machine_state.pos = *start;
+                        machine_state.pos = start;
                     }
                     if !machine_state.e {
                         gcode.push("M4".to_string());
@@ -78,7 +80,7 @@ impl Cut {
                         machine_state.f = 100.0;
                     }
                     gcode.push(move_gcode);
-                    machine_state.pos = *end;
+                    machine_state.pos = end;
                 }
                 Segment::Curve => {}
             }
@@ -87,5 +89,26 @@ impl Cut {
         gcode.push("M5".to_string());
         machine_state.e = false;
         Ok(gcode)
+    }
+
+    pub fn bounds(&self) -> (Coord, Coord) {
+        let mut min = Coord(f32::MAX, f32::MAX);
+        let mut max = Coord(f32::MIN, f32::MIN);
+        for segment in self.cuts.iter() {
+            match segment {
+                Segment::Line(start, end) => {
+                    min.0 = min.0.min(start.0);
+                    min.0 = min.0.min(end.0);
+                    min.1 = min.1.min(start.1);
+                    min.1 = min.1.min(end.1);
+                    max.0 = max.0.max(start.0);
+                    max.0 = max.0.max(end.0);
+                    max.1 = max.1.max(start.1);
+                    max.1 = max.1.max(end.1);
+                }
+                Segment::Curve => {}
+            }
+        }
+        (min, max)
     }
 }
