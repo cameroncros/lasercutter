@@ -14,7 +14,7 @@ use svg::node::Value;
 
 use crate::types::coord::Coord;
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, PartialEq, Debug)]
 pub struct Transform {
     #[serde(
         deserialize_with = "deserialize_matrix2",

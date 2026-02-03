@@ -5,7 +5,7 @@ use crate::types::{coord::Coord, machine_settings::MachineState, transform::Tran
 
 mod svg_parser;
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, PartialEq, Debug)]
 pub enum Segment {
     Line(Coord, Coord),
     Curve,
@@ -36,7 +36,7 @@ where
     serializer.serialize_str(&b64)
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, PartialEq, Debug)]
 pub struct Cut {
     pub source: Option<String>,
     pub transform: Transform,

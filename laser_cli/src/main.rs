@@ -134,22 +134,48 @@ mod tests {
     use laser_cutter::{
         gcode_emulator::GCodeEmulator,
         gcode_generator::{cut::Cut, workspace::Workspace},
+        types::gcode::GCode,
     };
     use test_case::test_case;
 
     #[test_case("box-all")]
     #[test_case("test_cases")]
-    fn end_to_end_test(input_file: &str) {
+    fn end_to_end_test(test_case: &str) {
         let mut w = Workspace::init(100.0, 100.0);
-        w.add_cut(Cut::from_svg(&format!("resources/{input_file}.svg")).unwrap());
+        w.add_cut(Cut::from_svg(&format!("../test_resources/{test_case}/input.svg")).unwrap());
         w.gen_gcode()
             .unwrap()
-            .save(&format!("gcode_{input_file}.gcode"))
+            .save(&format!(
+                "../test_resources/{test_case}/actual_output.gcode"
+            ))
             .unwrap();
-        w.save(&format!("workspace_{input_file}.yaml")).unwrap();
+        let actual_gcode = GCode::load(&format!(
+            "../test_resources/{test_case}/actual_output.gcode"
+        ))
+        .unwrap();
+        let expected_gcode = GCode::load(&format!(
+            "../test_resources/{test_case}/expected_output.gcode"
+        ))
+        .unwrap();
+        assert_eq!(actual_gcode, expected_gcode);
 
-        let mut gce = GCodeEmulator::from_file(&format!("gcode_{input_file}.gcode")).unwrap();
+        let mut gce = GCodeEmulator::from_file(&format!(
+            "../test_resources/{test_case}/actual_output.gcode"
+        ))
+        .unwrap();
         gce.run().unwrap();
-        gce.save(&format!("output_{input_file}.svg")).unwrap();
+        gce.save(&format!("../test_resources/{test_case}/actual_output.svg"))
+            .unwrap();
+
+        let actual_output =
+            std::fs::read_to_string(format!("../test_resources/{test_case}/actual_output.svg"))
+                .unwrap();
+        let expected_output =
+            std::fs::read_to_string(format!("../test_resources/{test_case}/expected_output.svg"))
+                .unwrap();
+        assert_eq!(actual_output, expected_output);
+
+        std::fs::remove_file(format!("../test_resources/{test_case}/actual_output.gcode")).unwrap();
+        std::fs::remove_file(format!("../test_resources/{test_case}/actual_output.svg")).unwrap();
     }
 }

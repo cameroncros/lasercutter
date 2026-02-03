@@ -1,5 +1,6 @@
 use std::{fs::File, io::Write};
 
+#[derive(PartialEq, Debug)]
 pub struct GCode {
     pub(crate) lines: Vec<String>,
 }

@@ -2,7 +2,7 @@ use std::ops::Add;
 
 use serde::{Deserialize, Serialize};
 
-#[derive(PartialEq, Clone, Copy, Serialize, Deserialize)]
+#[derive(PartialEq, Clone, Copy, Serialize, Deserialize, Debug)]
 pub struct Coord(pub(crate) f32, pub(crate) f32);
 
 impl Add for Coord {

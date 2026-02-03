@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::types::coord::Coord;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct MachineSettings {
     pub min_pos: Coord,
     pub max_pos: Coord,

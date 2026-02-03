@@ -135,7 +135,7 @@ mod tests {
 
     #[test]
     fn laser_gcode_test() {
-        let mut gce = GCodeEmulator::from_file("resources/test.gcode").unwrap();
+        let mut gce = GCodeEmulator::from_file("../test_resources/test.gcode").unwrap();
         gce.run().unwrap();
         gce.save("out.svg").unwrap();
     }

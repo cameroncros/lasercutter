@@ -122,6 +122,6 @@ mod tests {
 
     #[test]
     fn test_cut_from_svg() {
-        Cut::from_svg("resources/box-all.svg").unwrap();
+        Cut::from_svg("../test_resources/box-all/input.svg").unwrap();
     }
 }

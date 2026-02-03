@@ -15,7 +15,7 @@ use crate::{
     },
 };
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct Workspace {
     pub machine_settings: MachineSettings,
     pub items: Vec<Cut>,
@@ -75,13 +75,46 @@ impl Workspace {
 
 #[cfg(test)]
 mod tests {
+    use test_case::test_case;
+
     use crate::gcode_generator::{cut::Cut, workspace::Workspace};
 
     #[test]
     fn test_gen_gcode() {
         let mut w = Workspace::init(100.0, 100.0);
-        w.add_cut(Cut::from_svg("resources/box-all.svg").unwrap());
+        w.add_cut(Cut::from_svg("../test_resources/box-all/input.svg").unwrap());
 
         w.gen_gcode().unwrap().save("out.gcode").unwrap();
+    }
+
+    #[test_case("box-all")]
+    #[test_case("test_cases")]
+    fn test_workspace(test_case: &str) {
+        let mut initial = Workspace::init(100.0, 100.0);
+        initial
+            .add_cut(Cut::from_svg(&format!("../test_resources/{test_case}/input.svg")).unwrap());
+
+        initial
+            .save(&format!(
+                "../test_resources/{test_case}/actual_workspace.yaml"
+            ))
+            .unwrap();
+
+        let expected = Workspace::load(&format!(
+            "../test_resources/{test_case}/actual_workspace.yaml"
+        ))
+        .unwrap();
+        let actual = Workspace::load(&format!(
+            "../test_resources/{test_case}/expected_workspace.yaml"
+        ))
+        .unwrap();
+
+        assert_eq!(initial, expected);
+        assert_eq!(actual, expected);
+
+        std::fs::remove_file(format!(
+            "../test_resources/{test_case}/actual_workspace.yaml"
+        ))
+        .unwrap();
     }
 }
