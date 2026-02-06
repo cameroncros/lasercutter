@@ -1,5 +1,6 @@
 [workspace]
-resolver = "3"
-members = ["laser_cli",
+members = [
     "laser_cutter",
+    "laser_gui",
 ]
+resolver = "3"

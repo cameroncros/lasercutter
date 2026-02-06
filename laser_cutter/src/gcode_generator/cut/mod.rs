@@ -1,3 +1,5 @@
+use std::{fmt::Display, path::PathBuf};
+
 use base64::{Engine, engine::general_purpose};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
@@ -38,13 +40,22 @@ where
 
 #[derive(Clone, Serialize, Deserialize, PartialEq, Debug)]
 pub struct Cut {
-    pub source: Option<String>,
+    pub source: Option<PathBuf>,
     pub transform: Transform,
     #[serde(
         serialize_with = "serialize_cuts",
         deserialize_with = "deserialize_cuts"
     )]
     pub cuts: Vec<Segment>,
+}
+
+impl Display for Cut {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.source {
+            Some(ref path) => write!(f, "Cut: {}", path.display()),
+            None => write!(f, "Cut: Unknown"),
+        }
+    }
 }
 
 impl Cut {

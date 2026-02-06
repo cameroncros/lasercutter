@@ -1,6 +1,7 @@
 use std::{
     fs::File,
     io::{BufReader, BufWriter},
+    path::Path,
 };
 
 use anyhow::Context;
@@ -29,14 +30,14 @@ impl Workspace {
         }
     }
 
-    pub fn load(file_name: &str) -> anyhow::Result<Workspace> {
-        let file = File::open(file_name).context("Failed to open file")?;
+    pub fn load<P: AsRef<Path>>(path: P) -> anyhow::Result<Workspace> {
+        let file = File::open(path).context("Failed to open file")?;
         let workspace: Workspace =
             serde_json::from_reader(BufReader::new(file)).context("Failed to parse file")?;
         Ok(workspace)
     }
 
-    pub fn save(&self, file_name: &str) -> anyhow::Result<()> {
+    pub fn save<P: AsRef<Path>>(&self, file_name: P) -> anyhow::Result<()> {
         let file = File::create(file_name).context("Failed to open file")?;
         serde_json::to_writer_pretty(&mut BufWriter::new(file), self)
             .context("Failed to write file")?;
@@ -71,6 +72,10 @@ impl Workspace {
 
         Ok(GCode { lines: gcode })
     }
+
+    pub fn items(&self) -> &[Cut] {
+        &self.items
+    }
 }
 
 #[cfg(test)]
@@ -82,7 +87,7 @@ mod tests {
     #[test]
     fn test_gen_gcode() {
         let mut w = Workspace::init(100.0, 100.0);
-        w.add_cut(Cut::from_svg("../test_resources/box-all/input.svg").unwrap());
+        w.add_cut(Cut::from_svg("../test_resources/box-all/input.svg".into()).unwrap());
 
         w.gen_gcode().unwrap().save("out.gcode").unwrap();
     }
@@ -91,20 +96,21 @@ mod tests {
     #[test_case("test_cases")]
     fn test_workspace(test_case: &str) {
         let mut initial = Workspace::init(100.0, 100.0);
-        initial
-            .add_cut(Cut::from_svg(&format!("../test_resources/{test_case}/input.svg")).unwrap());
+        initial.add_cut(
+            Cut::from_svg(format!("../test_resources/{test_case}/input.svg").into()).unwrap(),
+        );
 
         initial
-            .save(&format!(
+            .save(format!(
                 "../test_resources/{test_case}/actual_workspace.yaml"
             ))
             .unwrap();
 
-        let expected = Workspace::load(&format!(
+        let expected = Workspace::load(format!(
             "../test_resources/{test_case}/actual_workspace.yaml"
         ))
         .unwrap();
-        let actual = Workspace::load(&format!(
+        let actual = Workspace::load(format!(
             "../test_resources/{test_case}/expected_workspace.yaml"
         ))
         .unwrap();

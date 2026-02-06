@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use anyhow::{Context, bail};
 use svg::{
     node::{
@@ -36,7 +38,7 @@ impl Cut {
                     let first = coords.first().context("Missing first coordinate")?;
                     position = transform.apply(first);
                     for next_pos in coords[1..].iter() {
-                        let next = transform.apply(&next_pos);
+                        let next = transform.apply(next_pos);
                         segments.push(Segment::Line(position, next));
                         position = next;
                     }
@@ -81,16 +83,16 @@ impl Cut {
         Ok(segments)
     }
 
-    pub fn from_svg(file_path: &str) -> anyhow::Result<Cut> {
+    pub fn from_svg(file_path: PathBuf) -> anyhow::Result<Cut> {
         let mut content = String::new();
         let mut cut = Cut {
-            source: Some(file_path.to_string()),
+            source: Some(file_path.clone()),
             transform: Transform::default(),
             cuts: vec![],
         };
 
         let mut transform = Transform::default();
-        for event in svg::open(file_path, &mut content)? {
+        for event in svg::open(&file_path, &mut content)? {
             if let Event::Tag(name, t, attributes) = event {
                 if name == "path" {
                     let segments = Self::from_svg_path(&attributes, &transform)?;
@@ -122,6 +124,6 @@ mod tests {
 
     #[test]
     fn test_cut_from_svg() {
-        Cut::from_svg("../test_resources/box-all/input.svg").unwrap();
+        Cut::from_svg("../test_resources/box-all/input.svg".into()).unwrap();
     }
 }

@@ -123,4 +123,16 @@ impl Transform {
         let rot = Matrix2::new(cos, sin, -sin, cos);
         self.rotate = rot * self.rotate;
     }
+
+    pub fn scale(&mut self, factor: f32) {
+        let scale = Matrix2::new(factor, 0.0, 0.0, factor);
+        self.rotate = scale * self.rotate;
+        self.offset.0 *= factor;
+        self.offset.1 *= factor;
+    }
+
+    pub fn translate(&mut self, dx: f32, dy: f32) {
+        self.offset.0 += dx;
+        self.offset.1 += dy;
+    }
 }

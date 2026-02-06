@@ -5,7 +5,7 @@ use anyhow::bail;
 
 use crate::{
     gcode_emulator::{
-        Positioning::RELATIVE,
+        Positioning::Relative,
         renderer::{RenderSettings, Renderer},
         svg_renderer::SvgRenderer,
     },
@@ -13,8 +13,8 @@ use crate::{
 };
 
 enum Positioning {
-    RELATIVE,
-    ABSOLUTE,
+    Relative,
+    Absolute,
 }
 
 pub struct GCodeEmulator {
@@ -41,7 +41,7 @@ impl GCodeEmulator {
                 f: 0.0,
             },
             current_line: 0,
-            positioning: Positioning::ABSOLUTE,
+            positioning: Positioning::Absolute,
             renderer: SvgRenderer::new(),
         })
     }
@@ -90,7 +90,7 @@ impl GCodeEmulator {
                 self.state.pos = Coord(x, y);
             }
             "G21" => { /* Set units to mm */ }
-            "G90" => self.positioning = RELATIVE,
+            "G90" => self.positioning = Relative,
             "M4" => { /* Laser On */ }
             "M5" => { /* Laser Off */ }
             _ => bail!("Unknown code: {}", next_real),
@@ -104,8 +104,12 @@ impl GCodeEmulator {
         Ok(())
     }
 
+    pub fn to_svg_str(&self) -> anyhow::Result<String> {
+        self.renderer.to_svg_str()
+    }
+
     pub fn save(&mut self, file: &str) -> anyhow::Result<()> {
-        self.renderer.save(file)
+        self.renderer.to_file(file)
     }
 }
 
