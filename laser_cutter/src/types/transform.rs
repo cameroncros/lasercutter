@@ -135,4 +135,9 @@ impl Transform {
         self.offset.0 += dx;
         self.offset.1 += dy;
     }
+
+    pub fn reset(&mut self) {
+        self.offset = Coord(0.0, 0.0);
+        self.rotate = Matrix2::new(1.0, 0.0, 0.0, 1.0);
+    }
 }

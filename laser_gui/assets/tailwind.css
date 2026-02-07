@@ -26,8 +26,6 @@
     --text-sm--line-height: calc(1.25 / 0.875);
     --text-2xl: 1.5rem;
     --text-2xl--line-height: calc(2 / 1.5);
-    --text-3xl: 1.875rem;
-    --text-3xl--line-height: calc(2.25 / 1.875);
     --font-weight-semibold: 600;
     --font-weight-bold: 700;
     --tracking-wide: 0.025em;
@@ -181,6 +179,9 @@
   }
 }
 @layer utilities {
+  .visible {
+    visibility: visible;
+  }
   .relative {
     position: relative;
   }
@@ -210,6 +211,9 @@
   }
   .flex {
     display: flex;
+  }
+  .hidden {
+    display: none;
   }
   .h-screen {
     height: 100vh;
@@ -249,6 +253,9 @@
   }
   .flex-col {
     flex-direction: column;
+  }
+  .flex-row {
+    flex-direction: row;
   }
   .items-baseline {
     align-items: baseline;
@@ -320,6 +327,9 @@
   .px-4 {
     padding-inline: calc(var(--spacing) * 4);
   }
+  .px-40 {
+    padding-inline: calc(var(--spacing) * 40);
+  }
   .py-1 {
     padding-block: calc(var(--spacing) * 1);
   }
@@ -328,6 +338,9 @@
   }
   .py-3 {
     padding-block: calc(var(--spacing) * 3);
+  }
+  .py-4 {
+    padding-block: calc(var(--spacing) * 4);
   }
   .text-center {
     text-align: center;

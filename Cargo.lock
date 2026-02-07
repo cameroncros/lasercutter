@@ -1586,7 +1586,7 @@ version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "330c60081dcc4c72131f8eb70510f1ac07223e5d4163db481a04a0befcffa412"
 dependencies = [
- "libloading 0.7.4",
+ "libloading 0.8.9",
 ]
 
 [[package]]
@@ -2887,7 +2887,9 @@ dependencies = [
  "base64",
  "dioxus",
  "laser_cutter",
+ "lucide-dioxus",
  "rfd",
+ "tokio",
 ]
 
 [[package]]
@@ -3034,6 +3036,15 @@ name = "lru-slab"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "112b39cec0b298b6c1999fee3e31427f74f676e4cb9879ed1a121b43661a4154"
+
+[[package]]
+name = "lucide-dioxus"
+version = "2.563.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2edbaea8759034dfb5373c6a13d0ea1c1cbcdc5a7d3dafea6f166784ea5aba3a"
+dependencies = [
+ "dioxus",
+]
 
 [[package]]
 name = "mac"

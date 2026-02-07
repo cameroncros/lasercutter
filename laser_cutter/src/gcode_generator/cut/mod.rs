@@ -52,7 +52,7 @@ pub struct Cut {
 impl Display for Cut {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.source {
-            Some(ref path) => write!(f, "Cut: {}", path.display()),
+            Some(ref path) => write!(f, "Cut: {}", path.file_name().unwrap().to_string_lossy()),
             None => write!(f, "Cut: Unknown"),
         }
     }
