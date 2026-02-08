@@ -94,6 +94,7 @@ mod tests {
 
     #[test_case("box-all")]
     #[test_case("test_cases")]
+    #[test_case("float-issue")]
     fn test_workspace(test_case: &str) {
         let mut initial = Workspace::init(100.0, 100.0);
         initial.add_cut(
