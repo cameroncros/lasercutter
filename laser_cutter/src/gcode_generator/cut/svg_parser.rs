@@ -18,6 +18,37 @@ use crate::{
 };
 
 impl Cut {
+    fn from_svg_rect(
+        attributes: &Attributes,
+        transform: &Transform,
+    ) -> anyhow::Result<Vec<Segment>> {
+        // Future: Use transform.
+        let Some(x) = attributes.get("x") else {
+            bail!("Missing path data");
+        };
+        let Some(y) = attributes.get("y") else {
+            bail!("Missing path data");
+        };
+        let Some(h) = attributes.get("height") else {
+            bail!("Missing path data");
+        };
+        let Some(w) = attributes.get("width") else {
+            bail!("Missing path data");
+        };
+        let x = x.parse::<f32>().context("Failed to parse x as f32")?;
+        let y = y.parse::<f32>().context("Failed to parse y as f32")?;
+        let h = h.parse::<f32>().context("Failed to parse h as f32")?;
+        let w = w.parse::<f32>().context("Failed to parse w as f32")?;
+        let segments = vec![
+            Segment::Line(Coord(x, y), Coord(x + w, y)),
+            Segment::Line(Coord(x + w, y), Coord(x + w, y + h)),
+            Segment::Line(Coord(x + w, y + h), Coord(x, y + h)),
+            Segment::Line(Coord(x, y + h), Coord(x, y)),
+        ];
+
+        Ok(segments)
+    }
+
     fn from_svg_path(
         attributes: &Attributes,
         transform: &Transform,
@@ -94,12 +125,16 @@ impl Cut {
         let mut transform = Transform::default();
         for event in svg::open(&file_path, &mut content)? {
             if let Event::Tag(name, t, attributes) = event {
-                if name == "path" {
-                    let segments = Self::from_svg_path(&attributes, &transform)?;
-                    cut.cuts.extend(segments);
-                }
-                if name == "g" {
-                    match t {
+                match name {
+                    "path" => {
+                        let segments = Self::from_svg_path(&attributes, &transform)?;
+                        cut.cuts.extend(segments);
+                    }
+                    "rect" => {
+                        let segments = Self::from_svg_rect(&attributes, &transform)?;
+                        cut.cuts.extend(segments);
+                    }
+                    "g" => match t {
                         Type::Start => {
                             if let Some(s) = attributes.get("transform") {
                                 transform = Transform::try_from(s)?;
@@ -109,6 +144,9 @@ impl Cut {
                             transform = Transform::default();
                         }
                         Type::Empty => {}
+                    },
+                    (a) => {
+                        println!("Unknown tag: {a}");
                     }
                 }
             }
