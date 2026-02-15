@@ -203,7 +203,7 @@ mod tests {
     }
 
     #[test]
-    fn test_transform_from_value_scale() {
+    fn test_transform_from_value_scale_x() {
         let value = Value::from("scale(51.47239)");
         let result = Transform::try_from(&value).unwrap();
         let expected = Transform {
@@ -214,7 +214,7 @@ mod tests {
     }
 
     #[test]
-    fn test_transform_from_value_scale2() {
+    fn test_transform_from_value_scale_xy() {
         let value = Value::from("scale(51.47239,47.452)");
         let result = Transform::try_from(&value).unwrap();
         let expected = Transform {

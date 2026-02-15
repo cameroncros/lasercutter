@@ -13,6 +13,17 @@ pub enum Segment {
     Curve,
 }
 
+impl Segment {
+    pub(crate) fn transform(&self, transform: &Transform) -> Segment {
+        match self {
+            Segment::Line(start, end) => {
+                Segment::Line(transform.apply(start), transform.apply(end))
+            }
+            Segment::Curve => Segment::Curve,
+        }
+    }
+}
+
 fn deserialize_cuts<'de, D>(data: D) -> Result<Vec<Segment>, D::Error>
 where
     D: Deserializer<'de>,

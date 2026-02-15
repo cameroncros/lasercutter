@@ -54,27 +54,6 @@ fn save(workspace: &mut Signal<Workspace>) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn load(workspace: &mut Signal<Workspace>) -> anyhow::Result<()> {
-    if let Some(path) = rfd::FileDialog::new()
-        .add_filter("YAML", &["yaml", "yml"])
-        .pick_file()
-    {
-        workspace.set(Workspace::load(path)?);
-    }
-    Ok(())
-}
-
-fn add(workspace: &mut Signal<Workspace>) -> anyhow::Result<()> {
-    let mut w = workspace.write();
-    if let Some(path) = rfd::FileDialog::new()
-        .add_filter("svg", &["svg"])
-        .pick_file()
-    {
-        w.add_cut(Cut::from_svg(path)?);
-    }
-    Ok(())
-}
-
 /// App is the main component of our app. Components are the building blocks of dioxus apps. Each component is a function
 /// that takes some props and returns an Element. In this case, App takes no props because it is the root of our app.
 ///
@@ -119,14 +98,25 @@ fn App() -> Element {
                         },
                         "New"
                     }
-                    button {
-                        class: "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded",
-                        onclick: move |_| {
-                            if let Err(e) = load(&mut workspace) {
-                                errormsg.set(e.to_string())
-                            }
-                        },
+                    label { class: "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded",
                         "Load"
+                        input {
+                            r#type: "file",
+                            accept: "*.yaml,*.yml",
+                            onchange: move |evt: Event<FormData>| {
+                                if let [file] = &evt.files()[..] {
+                                    match Workspace::load(file.path()) {
+                                        Ok(ws) => {
+                                            workspace.set(ws);
+                                        }
+                                        Err(e) => {
+                                            errormsg.set(e.to_string());
+                                        }
+                                    }
+                                }
+                            },
+                            hidden: true,
+                        }
                     }
                     button {
                         class: "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded",
@@ -143,14 +133,27 @@ fn App() -> Element {
             div { class: "flex flex-1 overflow-hidden",
                 div { class: "w-72 bg-gray-500 p-3 flex flex-col gap-2 overflow-auto",
                     CutList { workspace }
-                    button {
-                        class: "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded",
-                        onclick: move |_| {
-                            if let Err(e) = add(&mut workspace) {
-                                errormsg.set(e.to_string())
-                            }
-                        },
+                    label { class: "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded",
                         "Add Cut"
+                        input {
+                            r#type: "file",
+                            accept: "*.svg",
+                            multiple: true,
+                            hidden: true,
+                            onchange: move |evt: Event<FormData>| {
+                                let mut ws = workspace.write();
+
+                                for file in evt.files() {
+                                    match Cut::from_svg(file.path()) {
+                                        Ok(cut) => ws.add_cut(cut),
+                                        Err(e) => {
+                                            errormsg.set(format!("Failed to load: {:?} - {}", file.path(), e));
+                                            return;
+                                        }
+                                    }
+                                }
+                            },
+                        }
                     }
                 }
 
