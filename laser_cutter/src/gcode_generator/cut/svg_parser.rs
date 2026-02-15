@@ -55,6 +55,34 @@ impl Cut {
         Ok(segments)
     }
 
+    fn from_svg_ellipse(
+        attributes: &Attributes,
+        transform: &Transform,
+    ) -> anyhow::Result<Vec<Segment>> {
+        // Future: Use transform.
+        let Some(cx) = attributes.get("cx") else {
+            bail!("Missing path data");
+        };
+        let Some(cy) = attributes.get("cy") else {
+            bail!("Missing path data");
+        };
+        let Some(rx) = attributes.get("rx") else {
+            bail!("Missing path data");
+        };
+        let Some(ry) = attributes.get("ry") else {
+            bail!("Missing path data");
+        };
+        let cx = cx.parse::<f32>().context("Failed to parse x as f32")?;
+        let cy = cy.parse::<f32>().context("Failed to parse y as f32")?;
+        let rx = rx.parse::<f32>().context("Failed to parse h as f32")?;
+        let ry = ry.parse::<f32>().context("Failed to parse w as f32")?;
+        let center = Coord(cx, cy);
+        let radius = Coord(rx, ry);
+        let segments = ellipse_segments(center, radius, 0.0, 2.0 * PI);
+
+        Ok(segments.iter().map(|s| s.transform(transform)).collect())
+    }
+
     fn from_svg_path(
         attributes: &Attributes,
         transform: &Transform,
@@ -198,6 +226,10 @@ impl Cut {
                         let segments = Self::from_svg_rect(&attributes, &transform)?;
                         cut.cuts.extend(segments);
                     }
+                    "ellipse" => {
+                        let segments = Self::from_svg_ellipse(&attributes, &transform)?;
+                        cut.cuts.extend(segments);
+                    }
                     "g" => match t {
                         Type::Start => {
                             if let Some(s) = attributes.get("transform") {
@@ -230,8 +262,31 @@ fn angle(a: Coord, b: Coord) -> f32 {
     first.copysign(sign)
 }
 
+fn ellipse_segments(c: Coord, r: Coord, theta: f32, theta_delta: f32) -> Vec<Segment> {
+    let mut segments = vec![];
+
+    let num_steps = (theta_delta * 180.0 / PI).abs().ceil();
+    let step_size = theta_delta / num_steps;
+
+    let mut last = Coord(c.0 + r.0 * theta.cos(), c.1 + r.1 * theta.sin());
+
+    for step in 1..(num_steps as i32) {
+        let next_a = theta + (step as f32) * step_size;
+        let next_coord = Coord(c.0 + r.0 * next_a.cos(), c.1 + r.1 * next_a.sin());
+
+        segments.push(Segment::Line(last, next_coord));
+        last = next_coord;
+    }
+
+    let last_a = theta + theta_delta;
+    let very_last = Coord(c.0 + r.0 * last_a.cos(), c.1 + r.1 * last_a.sin());
+    segments.push(Segment::Line(last, very_last));
+    segments
+}
+
 // https://svg-tutorial.com/editor/arc
 // https://www.w3.org/TR/SVG/implnote.html#ArcImplementationNotes
+// https://mortoray.com/rendering-an-svg-elliptical-arc-as-bezier-curves/
 fn interpolate_elliptical_arc(
     start: Coord,
     end: Coord,
@@ -246,11 +301,15 @@ fn interpolate_elliptical_arc(
             * Matrix2x1::new((start.0 - end.0) / 2.0, (start.1 - end.1) / 2.0),
     );
     // Step 2: Compute (cx′, cy′)
-    let det = (square(radius.0) * square(radius.1)
+    let multiplier = (square(radius.0) * square(radius.1)
         - square(radius.0) * square(xy_prime.1)
         - square(radius.1) * square(xy_prime.0))
-        / (square(radius.0) * square(xy_prime.1) + square(radius.1) * square(xy_prime.0));
-    let c_prime = det.sqrt()
+        / (square(radius.0) * square(xy_prime.1) + square(radius.1) * square(xy_prime.0)).sqrt();
+    if multiplier.is_nan() {
+        bail!("Radii are too small, can't fit an ellipse");
+    }
+
+    let c_prime = multiplier
         * Coord(
             (radius.0 * xy_prime.1) / radius.1,
             -(radius.1 * xy_prime.0) / radius.0,
@@ -293,60 +352,30 @@ fn interpolate_elliptical_arc(
         theta_delta
     };
 
-    let mut segments = vec![];
-
-    let num_steps = (theta_delta * 180.0 / PI).abs().ceil();
-    let step_size = theta_delta / num_steps;
-
-    let mut last = Coord(
-        c.0 + radius.0 * theta_1.cos(),
-        c.1 + radius.1 * theta_1.sin(),
-    );
-
-    for step in 1..(num_steps as i32) {
-        let next_a = theta_1 + (step as f32) * step_size;
-        let next_coord = Coord(c.0 + radius.0 * next_a.cos(), c.1 + radius.1 * next_a.sin());
-
-        segments.push(Segment::Line(last, next_coord));
-        last = next_coord;
-    }
-
-    let last_a = theta_1 + theta_delta;
-    let very_last = Coord(c.0 + radius.0 * last_a.cos(), c.1 + radius.1 * last_a.sin());
-    segments.push(Segment::Line(last, very_last));
-
-    Ok(segments)
+    Ok(ellipse_segments(c, radius, theta_1, theta_delta))
 }
 
 #[cfg(test)]
 mod tests {
+    use test_case::test_case;
+
     use crate::{
         gcode_emulator::GCodeEmulator,
         gcode_generator::{cut::Cut, workspace::Workspace},
     };
 
-    #[test]
-    fn test_cut_from_svg() {
-        Cut::from_svg("../test_resources/box-all/input.svg".into()).unwrap();
-    }
-
-    #[test]
-    fn test_cut_from_elliptical() {
-        let mut w = Workspace::init(100.0, 100.0);
-        w.add_cut(Cut::from_svg("../test_resources/test_cases/input.svg".into()).unwrap());
+    // #[test_case("box-all")]
+    // #[test_case("test_cases")]
+    #[test_case("elip-arc")]
+    // #[test_case("float-issue")]
+    // #[test_case("arcs01")]
+    fn test_cut_from_elliptical(test: &str) {
+        let mut w = Workspace::init(1000.0, 1000.0);
+        w.add_cut(Cut::from_svg(format!("../test_resources/{test}/input.svg").into()).unwrap());
         let gcode = w.gen_gcode().unwrap();
         let mut emu = GCodeEmulator::from_gcode(gcode).unwrap();
         emu.run().unwrap();
-        emu.save("output.svg").unwrap();
-    }
-
-    #[test]
-    fn test_cut_from_ellipticalq() {
-        let mut w = Workspace::init(100.0, 100.0);
-        w.add_cut(Cut::from_svg("../test_resources/arcs01/input.svg".into()).unwrap());
-        let gcode = w.gen_gcode().unwrap();
-        let mut emu = GCodeEmulator::from_gcode(gcode).unwrap();
-        emu.run().unwrap();
-        emu.save("output.svg").unwrap();
+        emu.save(&format!("../test_resources/{test}/output.svg"))
+            .unwrap();
     }
 }
