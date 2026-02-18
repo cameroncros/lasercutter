@@ -1,7 +1,4 @@
-use std::{
-    thread::sleep,
-    time::{Duration, Instant},
-};
+use std::time::{Duration, Instant};
 
 use dioxus::{core::Task, prelude::*};
 use laser_cutter::gcode_generator::{cut::Cut, workspace::Workspace};

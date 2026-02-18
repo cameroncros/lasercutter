@@ -5,7 +5,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::types::{coord::Coord, machine_settings::MachineState, transform::Transform};
 
-mod svg_parser;
+mod usvg_parser;
 
 #[derive(Clone, Serialize, Deserialize, PartialEq, Debug)]
 pub enum Segment {

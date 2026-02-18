@@ -1,6 +1,6 @@
 use std::{
     fmt::Display,
-    ops::{Add, AddAssign, Mul},
+    ops::{Add, AddAssign, Mul, Sub},
 };
 
 use nalgebra::{Const, Matrix2x1, OMatrix};
@@ -8,16 +8,6 @@ use serde::{Deserialize, Serialize};
 
 #[derive(PartialEq, Clone, Copy, Serialize, Deserialize, Debug)]
 pub struct Coord(pub(crate) f32, pub(crate) f32);
-
-impl Coord {
-    pub(crate) fn from(om: OMatrix<f32, Const<2>, Const<1>>) -> Coord {
-        Coord(om.x, om.y)
-    }
-
-    pub(crate) fn dist(&self) -> f32 {
-        (self.0 * self.0 + self.1 * self.1).sqrt()
-    }
-}
 
 impl From<Coord> for OMatrix<f32, Const<2>, Const<1>> {
     fn from(coord: Coord) -> OMatrix<f32, Const<2>, Const<1>> {
@@ -79,4 +69,17 @@ impl Default for Coord {
     fn default() -> Coord {
         Coord(0.0, 0.0)
     }
+}
+
+impl Sub for Coord {
+    type Output = Coord;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        Coord(self.0 - rhs.0, self.1 - rhs.1)
+    }
+}
+
+pub fn midpoint(first: &Coord, second: &Coord, ratio: f32) -> Coord {
+    let delta = *second - *first;
+    *first + ratio * delta
 }
