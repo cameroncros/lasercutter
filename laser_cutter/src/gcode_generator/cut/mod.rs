@@ -8,23 +8,15 @@ use crate::types::{coord::Coord, machine_settings::MachineState, transform::Tran
 mod usvg_parser;
 
 #[derive(Clone, Serialize, Deserialize, PartialEq, Debug)]
-pub enum Segment {
-    Line(Coord, Coord),
-    Curve,
-}
+pub struct Line(Coord, Coord);
 
-impl Segment {
-    pub(crate) fn transform(&self, transform: &Transform) -> Segment {
-        match self {
-            Segment::Line(start, end) => {
-                Segment::Line(transform.apply(start), transform.apply(end))
-            }
-            Segment::Curve => Segment::Curve,
-        }
+impl Line {
+    pub(crate) fn transform(&self, transform: &Transform) -> Line {
+        Line(transform.apply(&self.0), transform.apply(&self.1))
     }
 }
 
-fn deserialize_cuts<'de, D>(data: D) -> Result<Vec<Segment>, D::Error>
+fn deserialize_cuts<'de, D>(data: D) -> Result<Vec<Line>, D::Error>
 where
     D: Deserializer<'de>,
 {
@@ -37,7 +29,7 @@ where
     bitcode::deserialize(&bytes).map_err(serde::de::Error::custom)
 }
 
-fn serialize_cuts<S>(cuts: &Vec<Segment>, serializer: S) -> Result<S::Ok, S::Error>
+fn serialize_cuts<S>(cuts: &Vec<Line>, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
@@ -57,7 +49,7 @@ pub struct Cut {
         serialize_with = "serialize_cuts",
         deserialize_with = "deserialize_cuts"
     )]
-    pub cuts: Vec<Segment>,
+    pub cuts: Vec<Line>,
 }
 
 impl Display for Cut {
@@ -75,37 +67,32 @@ impl Cut {
         machine_state: &mut MachineState,
     ) -> anyhow::Result<Vec<String>> {
         let mut gcode = vec![];
-        for cut in self.cuts.iter() {
-            match cut {
-                Segment::Line(start, end) => {
-                    let start = self.transform.apply(start);
-                    let end = self.transform.apply(end);
-                    if start != machine_state.pos {
-                        if machine_state.e {
-                            gcode.push("M5".to_string());
-                            machine_state.e = false;
-                        }
-                        gcode.push(format!("G0 X{} Y{}", start.0, start.1));
-                        machine_state.pos = start;
-                    }
-                    if !machine_state.e {
-                        gcode.push("M4".to_string());
-                        machine_state.e = true;
-                    }
-                    let mut move_gcode = format!("G1 X{} Y{}", end.0, end.1);
-                    if machine_state.s != 1000.0 {
-                        move_gcode.push_str(&format!(" S{}", 1000.0));
-                        machine_state.s = 1000.0;
-                    }
-                    if machine_state.f != 100.0 {
-                        move_gcode.push_str(&format!(" F{}", 100.0));
-                        machine_state.f = 100.0;
-                    }
-                    gcode.push(move_gcode);
-                    machine_state.pos = end;
+        for Line(start, end) in self.cuts.iter() {
+            let start = self.transform.apply(start);
+            let end = self.transform.apply(end);
+            if start != machine_state.pos {
+                if machine_state.e {
+                    gcode.push("M5".to_string());
+                    machine_state.e = false;
                 }
-                Segment::Curve => {}
+                gcode.push(format!("G0 X{} Y{}", start.0, start.1));
+                machine_state.pos = start;
             }
+            if !machine_state.e {
+                gcode.push("M4".to_string());
+                machine_state.e = true;
+            }
+            let mut move_gcode = format!("G1 X{} Y{}", end.0, end.1);
+            if machine_state.s != 1000.0 {
+                move_gcode.push_str(&format!(" S{}", 1000.0));
+                machine_state.s = 1000.0;
+            }
+            if machine_state.f != 100.0 {
+                move_gcode.push_str(&format!(" F{}", 100.0));
+                machine_state.f = 100.0;
+            }
+            gcode.push(move_gcode);
+            machine_state.pos = end;
         }
 
         gcode.push("M5".to_string());
@@ -116,22 +103,17 @@ impl Cut {
     pub fn bounds(&self) -> (Coord, Coord) {
         let mut min = Coord(f32::MAX, f32::MAX);
         let mut max = Coord(f32::MIN, f32::MIN);
-        for segment in self.cuts.iter() {
-            match segment {
-                Segment::Line(start, end) => {
-                    let start = self.transform.apply(start);
-                    let end = self.transform.apply(end);
-                    min.0 = min.0.min(start.0);
-                    min.0 = min.0.min(end.0);
-                    min.1 = min.1.min(start.1);
-                    min.1 = min.1.min(end.1);
-                    max.0 = max.0.max(start.0);
-                    max.0 = max.0.max(end.0);
-                    max.1 = max.1.max(start.1);
-                    max.1 = max.1.max(end.1);
-                }
-                Segment::Curve => {}
-            }
+        for Line(start, end) in self.cuts.iter() {
+            let start = self.transform.apply(start);
+            let end = self.transform.apply(end);
+            min.0 = min.0.min(start.0);
+            min.0 = min.0.min(end.0);
+            min.1 = min.1.min(start.1);
+            min.1 = min.1.min(end.1);
+            max.0 = max.0.max(start.0);
+            max.0 = max.0.max(end.0);
+            max.1 = max.1.max(start.1);
+            max.1 = max.1.max(end.1);
         }
         (min, max)
     }

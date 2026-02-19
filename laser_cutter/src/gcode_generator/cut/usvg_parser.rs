@@ -8,7 +8,7 @@ use usvg::{
 };
 
 use crate::{
-    gcode_generator::cut::{Cut, Segment},
+    gcode_generator::cut::{Cut, Line},
     types::{
         coord::{Coord, midpoint},
         transform::Transform,
@@ -16,7 +16,7 @@ use crate::{
 };
 
 impl Cut {
-    fn from_svg_path(path: &Path) -> anyhow::Result<Vec<Segment>> {
+    fn from_svg_path(path: &Path) -> anyhow::Result<Vec<Line>> {
         let mut segments = vec![];
         let data = path.data().segments();
         let mut position = Coord::default();
@@ -28,7 +28,7 @@ impl Cut {
                 }
                 LineTo(point) => {
                     let next = Coord(point.x, point.y);
-                    segments.push(Segment::Line(position, next));
+                    segments.push(Line(position, next));
                     position = next;
                 }
                 QuadTo(control, end) => {
@@ -41,7 +41,7 @@ impl Cut {
                         let q1 = midpoint(&control, &end, ratio);
                         let next = midpoint(&q0, &q1, ratio);
 
-                        segments.push(Segment::Line(position, next));
+                        segments.push(Line(position, next));
                         position = next;
                     }
                 }
@@ -62,30 +62,18 @@ impl Cut {
 
                         let next = midpoint(&r0, &r1, ratio);
 
-                        segments.push(Segment::Line(position, next));
+                        segments.push(Line(position, next));
                         position = next;
                     }
                 }
                 Close => {
-                    let Some(last) = segments.last() else {
+                    let Some(Line(_, last)) = segments.last() else {
                         bail!("Missing last segment");
                     };
-                    let Some(first) = segments.first() else {
+                    let Some(Line(first, _)) = segments.first() else {
                         bail!("Missing first segment");
                     };
-                    let first_pos = match first {
-                        Segment::Line(f, _) => f,
-                        Segment::Curve => {
-                            unimplemented!()
-                        }
-                    };
-                    let last_pos = match last {
-                        Segment::Line(_, l) => l,
-                        Segment::Curve => {
-                            unimplemented!()
-                        }
-                    };
-                    segments.push(Segment::Line(*last_pos, *first_pos));
+                    segments.push(Line(*last, *first));
                 }
             }
         }
@@ -128,8 +116,31 @@ impl Cut {
         }
 
         let all_paths = all_nodes(tree.root());
+        let mut unsorted_cuts = vec![];
         for path in all_paths {
-            cut.cuts.extend(Self::from_svg_path(path)?);
+            unsorted_cuts.push(Self::from_svg_path(path)?);
+        }
+
+        let mut last = Coord(0f32, 0f32);
+        while !unsorted_cuts.is_empty() {
+            let mut closest = 0;
+            let mut closest_dist = f32::MAX;
+            for (i, cut) in unsorted_cuts.iter().enumerate() {
+                let Some(Line(f, _)) = cut.first() else {
+                    bail!("Path has no first")
+                };
+                let dist = (last - *f).dist();
+                if dist < closest_dist {
+                    closest_dist = dist;
+                    closest = i;
+                }
+            }
+            let nearest = unsorted_cuts.remove(closest);
+            last = match nearest.last() {
+                None => bail!("Path has no last"),
+                Some(Line(_, l)) => *l,
+            };
+            cut.cuts.extend(nearest);
         }
 
         Ok(cut)
@@ -138,19 +149,12 @@ impl Cut {
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
-
     use test_case::test_case;
 
     use crate::{
         gcode_emulator::GCodeEmulator,
         gcode_generator::{cut::Cut, workspace::Workspace},
     };
-
-    #[test]
-    fn test_from_svg() {
-        let cut = Cut::from_svg(PathBuf::from("../test_resources/arcs01/input.svg")).unwrap();
-    }
 
     #[test_case("box-all")]
     #[test_case("test_cases")]

@@ -9,6 +9,12 @@ use serde::{Deserialize, Serialize};
 #[derive(PartialEq, Clone, Copy, Serialize, Deserialize, Debug)]
 pub struct Coord(pub(crate) f32, pub(crate) f32);
 
+impl Coord {
+    pub(crate) fn dist(&self) -> f32 {
+        (self.0 * self.0 + self.1 * self.1).sqrt()
+    }
+}
+
 impl From<Coord> for OMatrix<f32, Const<2>, Const<1>> {
     fn from(coord: Coord) -> OMatrix<f32, Const<2>, Const<1>> {
         Matrix2x1::new(coord.0, coord.1)
