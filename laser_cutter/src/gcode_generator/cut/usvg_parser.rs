@@ -125,7 +125,9 @@ impl Cut {
         while !unsorted_cuts.is_empty() {
             let mut closest = 0;
             let mut closest_dist = f32::MAX;
+            let mut forward = true;
             for (i, cut) in unsorted_cuts.iter().enumerate() {
+                // Check forward path distance
                 let Some(Line(f, _)) = cut.first() else {
                     bail!("Path has no first")
                 };
@@ -133,9 +135,28 @@ impl Cut {
                 if dist < closest_dist {
                     closest_dist = dist;
                     closest = i;
+                    forward = true;
+                }
+
+                // Check reverse path distance
+                let Some(Line(_, l)) = cut.last() else {
+                    bail!("Path has no last")
+                };
+                let dist = (last - *l).dist();
+                if dist < closest_dist {
+                    closest_dist = dist;
+                    closest = i;
+                    forward = false;
                 }
             }
-            let nearest = unsorted_cuts.remove(closest);
+            let mut nearest = unsorted_cuts.remove(closest);
+            if !forward {
+                nearest = nearest
+                    .iter()
+                    .rev()
+                    .map(|Line(f, l)| Line(*l, *f))
+                    .collect()
+            }
             last = match nearest.last() {
                 None => bail!("Path has no last"),
                 Some(Line(_, l)) => *l,
