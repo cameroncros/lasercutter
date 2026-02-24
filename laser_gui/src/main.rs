@@ -12,7 +12,11 @@ use laser_cutter::{
 
 mod components;
 
-use crate::components::cutlist::CutList;
+use crate::components::{
+    connection_controls::ConnectionControls,
+    cutlist::CutList,
+    machine_controls::MachineControls,
+};
 
 // We can import assets in dioxus with the `asset!` macro. This macro takes a path to an asset relative to the crate root.
 // The macro returns an `Asset` type that will display as the path to the asset in the browser or a local path in desktop bundles.
@@ -220,8 +224,8 @@ fn App() -> Element {
                 }
 
                 div { class: "w-64 bg-gray-600 p-3 text-white",
-                    span { class: "text-sm uppercase tracking-wide text-gray-200", "Controls" }
-                    div { class: "mt-3 text-sm text-gray-100", "Right-side control bar" }
+                    ConnectionControls {}
+                    MachineControls {}
                 }
             }
 

@@ -9,116 +9,51 @@ use lucide_dioxus::{
     MoveRight,
     MoveUp,
     OctagonMinus,
-    Pencil,
     Plus,
     RefreshCcw,
     RefreshCw,
 };
 
-#[derive(Props, PartialEq, Clone)]
-struct RepeatButtonProps {
-    repeat_fn: EventHandler<()>,
-    children: Element,
-}
-
-fn repeat_button(props: RepeatButtonProps) -> Element {
-    let mut running = use_signal(|| false);
-
-    let mut task = use_signal(|| None::<Task>);
-
-    rsx! {
-        button {
-            class: "flex flex-row justify-center items-center bg-gray-700 hover:bg-gray-800 text-white text-xs font-semibold px-2 py-1 rounded w-full",
-            onpointerdown: move |_| {
-                running.set(true);
-
-                let t = spawn(async move {
-                    props.repeat_fn.call(());
-                    let start = Instant::now();
-                    while *running.read() {
-                        if start.elapsed().as_millis() > 300 {
-                            break;
-                        }
-                        tokio::time::sleep(Duration::from_millis(5)).await;
-                    }
-
-                    while *running.read() {
-                        props.repeat_fn.call(());
-                        let start = Instant::now();
-                        while *running.read() {
-                            if start.elapsed().as_millis() > 20 {
-                                break;
-                            }
-                            tokio::time::sleep(Duration::from_millis(5)).await;
-                        }
-                    }
-                });
-
-                task.set(Some(t));
-            },
-
-            onpointerup: move |_| {
-                running.set(false);
-                task.write().take();
-            },
-
-            onpointerleave: move |_| {
-                running.set(false);
-                task.write().take();
-            },
-            {props.children}
-        }
-    }
-}
+use crate::components::repeat_button::RepeatButton;
 
 #[component]
 pub fn CutElem(cut: Cut, index: usize, is_last: bool, workspace: Signal<Workspace>) -> Element {
-    let mut sc1 = use_signal(|| false);
+    let mut rapid_rate = use_signal(|| 1.0);
     let scale_step = 1.1f32;
-    let rotate_step = 5.0f32;
-    let translate_step = 5.0f32;
     rsx! {
-        div { class: "w-full",
-            div { class: "flex items-center justify-between bg-gray-800 text-white px-4 py-3",
-                div { class: "flex items-baseline gap-2",
-                    span { class: "text-gray-300", "{cut}" }
-                }
-                div { class: "flex gap-2",
-                    button {
-                        class: "bg-gray-700 hover:bg-gray-800 text-white text-xs font-semibold px-2 py-1 rounded w-full",
-                        visibility: if index == 0 { "hidden" } else { "visible" },
-                        onclick: move |_| {
-                            let mut workspace = workspace.write();
-                            workspace.items.swap(index, index - 1);
-                        },
-                        MoveUp {}
-                    }
-                    button {
-                        class: "bg-gray-700 hover:bg-gray-800 text-white text-xs font-semibold px-2 py-1 rounded w-full",
-                        visibility: if is_last { "hidden" } else { "visible" },
-                        onclick: move |_| {
-                            let mut workspace = workspace.write();
-                            workspace.items.swap(index, index + 1);
-                        },
-                        MoveDown {}
-                    }
-                    button {
-                        class: "bg-gray-700 hover:bg-gray-800 text-white text-xs font-semibold px-2 py-1 rounded w-full",
-                        onclick: move |_| {
-                            let show = *sc1.read();
-                            sc1.set(!show);
-                        },
-                        Pencil {}
+        details { class: "mb-4 border border-gray-200 rounded-lg open:shadow-lg transition-shadow duration-300 bg-gray-700 text-white text-xs font-semibold px-2 py-1 rounded w-full",
+            summary { class: "p-4 font-semibold cursor-pointer bg-gray-100 hover:bg-gray-200 list-none bg-gray-700 hover:bg-gray-800 text-white text-xs font-semibold px-2 py-1 rounded w-full",
+                div { class: "flex items-center justify-between text-white",
+                    "{cut}"
+                    div {
+                        class: "flex gap-2",
+                        button {
+                            class: "bg-gray-700 hover:bg-gray-800 text-white text-xs font-semibold px-2 py-1 rounded w-full gap-0",
+                            visibility: if index == 0 { "hidden" } else { "visible" },
+                            onclick: move |_| {
+                                let mut workspace = workspace.write();
+                                workspace.items.swap(index, index - 1);
+                            },
+                            MoveUp {}
+                        }
+                        button {
+                            class: "bg-gray-700 hover:bg-gray-800 text-white text-xs font-semibold px-2 py-1 rounded w-full gap-0",
+                            visibility: if is_last { "hidden" } else { "visible" },
+                            onclick: move |_| {
+                                let mut workspace = workspace.write();
+                                workspace.items.swap(index, index + 1);
+                            },
+                            MoveDown {}
+                        }
                     }
                 }
+
             }
-        }
-        if *sc1.read() {
             // Controls section
             div { class: "px-2",
                 div { class: "flex -mx-2",
                     div { class: "w-1/3 px-2",
-                        repeat_button {
+                        RepeatButton {
                             repeat_fn: move || {
                                 let mut workspace = workspace.write();
                                 if let Some(cut) = workspace.items.get_mut(index) {
@@ -130,11 +65,11 @@ pub fn CutElem(cut: Cut, index: usize, is_last: bool, workspace: Signal<Workspac
                         }
                     }
                     div { class: "w-1/3 px-2",
-                        repeat_button {
+                        RepeatButton {
                             repeat_fn: move |_| {
                                 let mut workspace = workspace.write();
                                 if let Some(cut) = workspace.items.get_mut(index) {
-                                    cut.transform.translate(0.0, -translate_step);
+                                    cut.transform.translate(0.0, -*rapid_rate.read());
                                 }
 
                             },
@@ -142,7 +77,7 @@ pub fn CutElem(cut: Cut, index: usize, is_last: bool, workspace: Signal<Workspac
                         }
                     }
                     div { class: "w-1/3 px-2",
-                        repeat_button {
+                        RepeatButton {
                             repeat_fn: move |_| {
                                 let mut workspace = workspace.write();
                                 if let Some(cut) = workspace.items.get_mut(index) {
@@ -155,18 +90,18 @@ pub fn CutElem(cut: Cut, index: usize, is_last: bool, workspace: Signal<Workspac
                 }
                 div { class: "flex -mx-2",
                     div { class: "w-1/3 px-2",
-                        repeat_button {
+                        RepeatButton {
                             repeat_fn: move |_| {
                                 let mut workspace = workspace.write();
                                 if let Some(cut) = workspace.items.get_mut(index) {
-                                    cut.transform.translate(-translate_step, 0.0);
+                                    cut.transform.translate(-*rapid_rate.read(), 0.0);
                                 }
                             },
                             MoveLeft {}
                         }
                     }
                     div { class: "w-1/3 px-2",
-                        repeat_button {
+                        RepeatButton {
                             repeat_fn: move |_| {
                                 let mut workspace = workspace.write();
                                 if let Some(cut) = workspace.items.get_mut(index) {
@@ -177,11 +112,11 @@ pub fn CutElem(cut: Cut, index: usize, is_last: bool, workspace: Signal<Workspac
                         }
                     }
                     div { class: "w-1/3 px-2",
-                        repeat_button {
+                        RepeatButton {
                             repeat_fn: move |_| {
                                 let mut workspace = workspace.write();
                                 if let Some(cut) = workspace.items.get_mut(index) {
-                                    cut.transform.translate(translate_step, 0.0);
+                                    cut.transform.translate(*rapid_rate.read(), 0.0);
                                 }
                             },
                             MoveRight {}
@@ -190,37 +125,77 @@ pub fn CutElem(cut: Cut, index: usize, is_last: bool, workspace: Signal<Workspac
                 }
                 div { class: "flex -mx-2",
                     div { class: "w-1/3 px-2",
-                        repeat_button {
+                        RepeatButton {
                             repeat_fn: move |_| {
                                 let mut workspace = workspace.write();
                                 if let Some(cut) = workspace.items.get_mut(index) {
-                                    cut.transform.rotate(-rotate_step);
+                                    cut.transform.rotate(-*rapid_rate.read());
                                 }
                             },
                             RefreshCw {}
                         }
                     }
                     div { class: "w-1/3 px-2",
-                        repeat_button {
+                        RepeatButton {
                             repeat_fn: move |_| {
                                 let mut workspace = workspace.write();
                                 if let Some(cut) = workspace.items.get_mut(index) {
-                                    cut.transform.translate(0.0, translate_step);
+                                    cut.transform.translate(0.0, *rapid_rate.read());
                                 }
                             },
                             MoveDown {}
                         }
                     }
                     div { class: "w-1/3 px-2",
-                        repeat_button {
+                        RepeatButton {
                             repeat_fn: move |_| {
                                 let mut workspace = workspace.write();
                                 if let Some(cut) = workspace.items.get_mut(index) {
-                                    cut.transform.rotate(rotate_step);
+                                    cut.transform.rotate(*rapid_rate.read());
                                 }
                             },
                             RefreshCcw {}
                         }
+                    }
+                }
+                div { class: "flex -mx-2",
+                    button {
+                        class: "rounded-l",
+                        class: "w-1/4 bg-gray-300 text-gray-800 font-bold py-2 px-4",
+                        class: if *rapid_rate.read() == 0.1 { "bg-gray-400" } else { "hover:bg-gray-400" },
+                        disabled: *rapid_rate.read() == 0.1,
+                        onclick: move |_| {
+                            rapid_rate.set(0.1);
+                        },
+                        "0.1"
+                    }
+                    button {
+                        class: "w-1/4 bg-gray-300 text-gray-800 font-bold py-2 px-4",
+                        class: if *rapid_rate.read() == 1.0 { "bg-gray-400" } else { "hover:bg-gray-400" },
+                        disabled: *rapid_rate.read() == 1.0,
+                        onclick: move |_| {
+                            rapid_rate.set(1.0);
+                        },
+                        "1"
+                    }
+                    button {
+                        class: "w-1/4 bg-gray-300 text-gray-800 font-bold py-2 px-4",
+                        class: if *rapid_rate.read() == 10.0 { "bg-gray-400" } else { "hover:bg-gray-400" },
+                        disabled: *rapid_rate.read() == 10.0,
+                        onclick: move |_| {
+                            rapid_rate.set(10.0);
+                        },
+                        "10"
+                    }
+                    button {
+                        class: "rounded-r",
+                        class: "w-1/4 bg-gray-300 text-gray-800 font-bold py-2 px-4",
+                        class: if *rapid_rate.read() == 100.0 { "bg-gray-400" } else { "hover:bg-gray-400" },
+                        disabled: *rapid_rate.read() == 100.0,
+                        onclick: move |_| {
+                            rapid_rate.set(100.0);
+                        },
+                        "100"
                     }
                 }
             }

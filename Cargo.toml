@@ -1,5 +1,5 @@
 [workspace]
-members = [
+members = ["laser_comm",
     "laser_cutter",
     "laser_gui",
 ]
