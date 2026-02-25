@@ -7,7 +7,7 @@ use dioxus::html::geometry::WheelDelta;
 use dioxus::prelude::*;
 use laser_cutter::{
     gcode_emulator::GCodeEmulator,
-    gcode_generator::{cut::Cut, workspace::Workspace},
+    gcode_generator::{operation::cut::Cut, workspace::Workspace},
 };
 
 mod components;
@@ -16,8 +16,8 @@ pub(crate) mod style;
 use crate::{
     components::{
         connection_controls::ConnectionControls,
-        cutlist::CutList,
         machine_controls::MachineControls,
+        operationslist::CutList,
     },
     style::MENU_BUTTON_CLASSES,
 };
@@ -153,7 +153,7 @@ fn App() -> Element {
 
                                 for file in evt.files() {
                                     match Cut::from_svg(file.path()) {
-                                        Ok(cut) => ws.add_cut(cut),
+                                        Ok(cut) => ws.add_operation(cut),
                                         Err(e) => {
                                             errormsg.set(format!("Failed to load: {:?} - {}", file.path(), e));
                                             return;

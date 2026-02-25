@@ -1,6 +1,7 @@
-use std::{fs, path::PathBuf};
+use std::{fmt::Display, fs, path::PathBuf};
 
 use anyhow::bail;
+use serde::{Deserialize, Serialize};
 use usvg::{
     Node,
     Path,
@@ -8,12 +9,58 @@ use usvg::{
 };
 
 use crate::{
-    gcode_generator::cut::{Cut, Line},
+    gcode_generator::operation::{
+        Line,
+        Operation,
+        OperationTrait,
+        deserialize_cuts,
+        serialize_cuts,
+    },
     types::{
         coord::{Coord, midpoint},
         transform::Transform,
     },
 };
+
+#[derive(Clone, Serialize, Deserialize, PartialEq, Debug)]
+pub struct Cut {
+    pub transform: Transform,
+    pub source: Option<PathBuf>,
+    #[serde(
+        serialize_with = "serialize_cuts",
+        deserialize_with = "deserialize_cuts"
+    )]
+    pub cuts: Vec<Line>,
+}
+
+impl Display for Cut {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.source {
+            Some(ref path) => write!(f, "Cut: {}", path.file_name().unwrap().to_string_lossy()),
+            None => write!(f, "Cut: Unknown"),
+        }
+    }
+}
+
+impl OperationTrait for Cut {
+    fn bounds(&self) -> (Coord, Coord) {
+        let mut min = Coord(f32::MAX, f32::MAX);
+        let mut max = Coord(f32::MIN, f32::MIN);
+        for Line(start, end) in self.cuts.iter() {
+            let start = self.transform.apply(start);
+            let end = self.transform.apply(end);
+            min.0 = min.0.min(start.0);
+            min.0 = min.0.min(end.0);
+            min.1 = min.1.min(start.1);
+            min.1 = min.1.min(end.1);
+            max.0 = max.0.max(start.0);
+            max.0 = max.0.max(end.0);
+            max.1 = max.1.max(start.1);
+            max.1 = max.1.max(end.1);
+        }
+        (min, max)
+    }
+}
 
 impl Cut {
     fn from_svg_path(path: &Path) -> anyhow::Result<Vec<Line>> {
@@ -85,15 +132,16 @@ impl Cut {
         Ok(segments)
     }
 
-    pub fn from_svg(file_path: PathBuf) -> anyhow::Result<Cut> {
+    pub fn from_svg(file_path: PathBuf) -> anyhow::Result<Operation> {
+        let content = fs::read_to_string(&file_path)?;
+
+        let tree = usvg::Tree::from_str(&content, &usvg::Options::default())?;
+
         let mut cut = Cut {
-            source: Some(file_path.clone()),
             transform: Transform::default(),
+            source: Some(file_path),
             cuts: vec![],
         };
-
-        let content = fs::read_to_string(&file_path)?;
-        let tree = usvg::Tree::from_str(&content, &usvg::Options::default())?;
 
         fn all_nodes(parent: &usvg::Group) -> Vec<&Path> {
             let mut found_nodes = vec![];
@@ -164,7 +212,7 @@ impl Cut {
             cut.cuts.extend(nearest);
         }
 
-        Ok(cut)
+        Ok(Operation::Cut(cut))
     }
 }
 
@@ -174,7 +222,7 @@ mod tests {
 
     use crate::{
         gcode_emulator::GCodeEmulator,
-        gcode_generator::{cut::Cut, workspace::Workspace},
+        gcode_generator::{operation::cut::Cut, workspace::Workspace},
     };
 
     #[test_case("box-all")]
@@ -184,7 +232,9 @@ mod tests {
     #[test_case("arcs01")]
     fn test_cut_from_elliptical(test: &str) {
         let mut w = Workspace::init(1000.0, 1000.0);
-        w.add_cut(Cut::from_svg(format!("../test_resources/{test}/input.svg").into()).unwrap());
+        w.add_operation(
+            Cut::from_svg(format!("../test_resources/{test}/input.svg").into()).unwrap(),
+        );
         let gcode = w.gen_gcode().unwrap();
         let mut emu = GCodeEmulator::from_gcode(gcode).unwrap();
         emu.run().unwrap();

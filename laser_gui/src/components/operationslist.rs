@@ -1,7 +1,9 @@
 use dioxus::prelude::*;
-use laser_cutter::gcode_generator::{cut::Cut, workspace::Workspace};
+use laser_cutter::gcode_generator::{
+    operation::{cut::Cut, Operation},
+    workspace::Workspace,
+};
 use lucide_dioxus::{
-    Delete,
     Minus,
     MoveDown,
     MoveLeft,
@@ -64,7 +66,10 @@ pub fn CutElem(cut: Cut, index: usize, is_last: bool, workspace: Signal<Workspac
                             repeat_fn: move || {
                                 let mut workspace = workspace.write();
                                 if let Some(cut) = workspace.items.get_mut(index) {
-                                    cut.transform.scale(1.0 / scale_step);
+                                    match cut {
+                                        Operation::Cut(c) => c.transform.scale(1.0 / scale_step),
+                                        Operation::Raster(r) => r.transform.scale(1.0 / scale_step),
+                                    };
                                 }
                             },
 
@@ -76,7 +81,10 @@ pub fn CutElem(cut: Cut, index: usize, is_last: bool, workspace: Signal<Workspac
                             repeat_fn: move |_| {
                                 let mut workspace = workspace.write();
                                 if let Some(cut) = workspace.items.get_mut(index) {
-                                    cut.transform.translate(0.0, -*rapid_rate.read());
+                                    match cut {
+                                        Operation::Cut(c) => c.transform.translate(0.0, -*rapid_rate.read()),
+                                        Operation::Raster(r) => r.transform.translate(0.0, -*rapid_rate.read()),
+                                    };
                                 }
 
                             },
@@ -88,7 +96,10 @@ pub fn CutElem(cut: Cut, index: usize, is_last: bool, workspace: Signal<Workspac
                             repeat_fn: move |_| {
                                 let mut workspace = workspace.write();
                                 if let Some(cut) = workspace.items.get_mut(index) {
-                                    cut.transform.scale(scale_step);
+                                    match cut {
+                                        Operation::Cut(c) => c.transform.scale(scale_step),
+                                        Operation::Raster(r) => r.transform.scale(scale_step),
+                                    };
                                 }
                             },
                             Plus {}
@@ -101,7 +112,10 @@ pub fn CutElem(cut: Cut, index: usize, is_last: bool, workspace: Signal<Workspac
                             repeat_fn: move |_| {
                                 let mut workspace = workspace.write();
                                 if let Some(cut) = workspace.items.get_mut(index) {
-                                    cut.transform.translate(-*rapid_rate.read(), 0.0);
+                                    match cut {
+                                        Operation::Cut(c) => c.transform.translate(-*rapid_rate.read(), 0.0),
+                                        Operation::Raster(r) => r.transform.translate(-*rapid_rate.read(), 0.0),
+                                    };
                                 }
                             },
                             MoveLeft {}
@@ -112,7 +126,10 @@ pub fn CutElem(cut: Cut, index: usize, is_last: bool, workspace: Signal<Workspac
                             repeat_fn: move |_| {
                                 let mut workspace = workspace.write();
                                 if let Some(cut) = workspace.items.get_mut(index) {
-                                    cut.transform.reset();
+                                    match cut {
+                                        Operation::Cut(c) => c.transform.reset(),
+                                        Operation::Raster(r) => r.transform.reset(),
+                                    };
                                 }
                             },
                             OctagonMinus {}
@@ -123,7 +140,10 @@ pub fn CutElem(cut: Cut, index: usize, is_last: bool, workspace: Signal<Workspac
                             repeat_fn: move |_| {
                                 let mut workspace = workspace.write();
                                 if let Some(cut) = workspace.items.get_mut(index) {
-                                    cut.transform.translate(*rapid_rate.read(), 0.0);
+                                    match cut {
+                                        Operation::Cut(c) => c.transform.translate(*rapid_rate.read(), 0.0),
+                                        Operation::Raster(r) => r.transform.translate(*rapid_rate.read(), 0.0),
+                                    };
                                 }
                             },
                             MoveRight {}
@@ -136,7 +156,10 @@ pub fn CutElem(cut: Cut, index: usize, is_last: bool, workspace: Signal<Workspac
                             repeat_fn: move |_| {
                                 let mut workspace = workspace.write();
                                 if let Some(cut) = workspace.items.get_mut(index) {
-                                    cut.transform.rotate(-*rapid_rate.read());
+                                    match cut {
+                                        Operation::Cut(c) => c.transform.rotate(-*rapid_rate.read()),
+                                        Operation::Raster(r) => r.transform.rotate(-*rapid_rate.read()),
+                                    };
                                 }
                             },
                             RefreshCw {}
@@ -147,7 +170,10 @@ pub fn CutElem(cut: Cut, index: usize, is_last: bool, workspace: Signal<Workspac
                             repeat_fn: move |_| {
                                 let mut workspace = workspace.write();
                                 if let Some(cut) = workspace.items.get_mut(index) {
-                                    cut.transform.translate(0.0, *rapid_rate.read());
+                                    match cut {
+                                        Operation::Cut(c) => c.transform.translate(0.0, *rapid_rate.read()),
+                                        Operation::Raster(r) => r.transform.translate(0.0, *rapid_rate.read()),
+                                    };
                                 }
                             },
                             MoveDown {}
@@ -158,7 +184,10 @@ pub fn CutElem(cut: Cut, index: usize, is_last: bool, workspace: Signal<Workspac
                             repeat_fn: move |_| {
                                 let mut workspace = workspace.write();
                                 if let Some(cut) = workspace.items.get_mut(index) {
-                                    cut.transform.rotate(*rapid_rate.read());
+                                    match cut {
+                                        Operation::Cut(c) => c.transform.rotate(*rapid_rate.read()),
+                                        Operation::Raster(r) => r.transform.rotate(*rapid_rate.read()),
+                                    };
                                 }
                             },
                             RefreshCcw {}
@@ -216,11 +245,21 @@ pub fn CutList(workspace: Signal<Workspace>) -> Element {
 
     rsx! {
         for (index , cut) in workspace_read.items().iter().enumerate() {
-            CutElem {
-                cut: cut.clone(),
-                index,
-                is_last: index == workspace_read.items().len() - 1,
-                workspace,
+            match cut {
+                Operation::Cut(cut) => {
+                    rsx! {
+                        CutElem {
+                            cut: cut.clone(),
+                            index,
+                            is_last: index == workspace_read.items().len() - 1,
+                            workspace,
+                        }
+                    }
+                }
+                Operation::Raster(_) => {
+                    // RasterElem {}
+                    rsx! {}
+                }
             }
         }
     }

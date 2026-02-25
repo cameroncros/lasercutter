@@ -1,2 +1,2 @@
-pub mod cut;
+pub mod operation;
 pub mod workspace;

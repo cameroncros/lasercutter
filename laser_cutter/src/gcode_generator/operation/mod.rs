@@ -1,11 +1,13 @@
-use std::{fmt::Display, path::PathBuf};
-
 use base64::{Engine, engine::general_purpose};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-use crate::types::{coord::Coord, machine_settings::MachineState, transform::Transform};
+use crate::{
+    gcode_generator::operation::{cut::Cut, raster::Raster},
+    types::{coord::Coord, machine_settings::MachineState, transform::Transform},
+};
 
-mod usvg_parser;
+pub mod cut;
+pub mod raster;
 
 #[derive(Clone, Serialize, Deserialize, PartialEq, Debug)]
 pub struct Line(Coord, Coord);
@@ -16,7 +18,7 @@ impl Line {
     }
 }
 
-fn deserialize_cuts<'de, D>(data: D) -> Result<Vec<Line>, D::Error>
+pub fn deserialize_cuts<'de, D>(data: D) -> Result<Vec<Line>, D::Error>
 where
     D: Deserializer<'de>,
 {
@@ -29,7 +31,7 @@ where
     bitcode::deserialize(&bytes).map_err(serde::de::Error::custom)
 }
 
-fn serialize_cuts<S>(cuts: &Vec<Line>, serializer: S) -> Result<S::Ok, S::Error>
+pub fn serialize_cuts<S>(cuts: &Vec<Line>, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
@@ -41,35 +43,29 @@ where
     serializer.serialize_str(&b64)
 }
 
-#[derive(Clone, Serialize, Deserialize, PartialEq, Debug)]
-pub struct Cut {
-    pub source: Option<PathBuf>,
-    pub transform: Transform,
-    #[serde(
-        serialize_with = "serialize_cuts",
-        deserialize_with = "deserialize_cuts"
-    )]
-    pub cuts: Vec<Line>,
+#[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
+pub enum Operation {
+    Cut(Cut),
+    Raster(Raster),
 }
 
-impl Display for Cut {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self.source {
-            Some(ref path) => write!(f, "Cut: {}", path.file_name().unwrap().to_string_lossy()),
-            None => write!(f, "Cut: Unknown"),
-        }
-    }
+pub trait OperationTrait {
+    fn bounds(&self) -> (Coord, Coord);
 }
 
-impl Cut {
+impl Operation {
     pub(crate) fn gen_gcode(
         &self,
         machine_state: &mut MachineState,
     ) -> anyhow::Result<Vec<String>> {
+        let (cuts, transform) = match &self {
+            Operation::Cut(c) => (&c.cuts, &c.transform),
+            Operation::Raster(r) => (&r.cuts, &r.transform),
+        };
         let mut gcode = vec![];
-        for Line(start, end) in self.cuts.iter() {
-            let start = self.transform.apply(start);
-            let end = self.transform.apply(end);
+        for Line(start, end) in cuts.iter() {
+            let start = transform.apply(start);
+            let end = transform.apply(end);
             if start != machine_state.pos {
                 if machine_state.e {
                     gcode.push("M5".to_string());
@@ -101,20 +97,9 @@ impl Cut {
     }
 
     pub fn bounds(&self) -> (Coord, Coord) {
-        let mut min = Coord(f32::MAX, f32::MAX);
-        let mut max = Coord(f32::MIN, f32::MIN);
-        for Line(start, end) in self.cuts.iter() {
-            let start = self.transform.apply(start);
-            let end = self.transform.apply(end);
-            min.0 = min.0.min(start.0);
-            min.0 = min.0.min(end.0);
-            min.1 = min.1.min(start.1);
-            min.1 = min.1.min(end.1);
-            max.0 = max.0.max(start.0);
-            max.0 = max.0.max(end.0);
-            max.1 = max.1.max(start.1);
-            max.1 = max.1.max(end.1);
+        match &self {
+            Operation::Cut(c) => c.bounds(),
+            Operation::Raster(r) => r.bounds(),
         }
-        (min, max)
     }
 }

@@ -8,7 +8,7 @@ use anyhow::Context;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    gcode_generator::cut::Cut,
+    gcode_generator::operation::Operation,
     types::{
         coord::Coord,
         gcode::GCode,
@@ -19,7 +19,7 @@ use crate::{
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct Workspace {
     pub machine_settings: MachineSettings,
-    pub items: Vec<Cut>,
+    pub items: Vec<Operation>,
 }
 
 impl Workspace {
@@ -44,10 +44,18 @@ impl Workspace {
         Ok(())
     }
 
-    pub fn add_cut(&mut self, mut cut: Cut) {
+    pub fn add_operation(&mut self, mut cut: Operation) {
         let (min, _) = cut.bounds();
-        cut.transform.offset.0 = -min.0;
-        cut.transform.offset.1 = -min.1;
+        match &mut cut {
+            Operation::Cut(c) => {
+                c.transform.offset.0 = -min.0;
+                c.transform.offset.1 = -min.1;
+            }
+            Operation::Raster(r) => {
+                r.transform.offset.0 = -min.0;
+                r.transform.offset.1 = -min.1;
+            }
+        };
         self.items.push(cut);
     }
 
@@ -73,19 +81,19 @@ impl Workspace {
         Ok(GCode { lines: gcode })
     }
 
-    pub fn items(&self) -> &[Cut] {
+    pub fn items(&self) -> &[Operation] {
         &self.items
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::gcode_generator::{cut::Cut, workspace::Workspace};
+    use crate::gcode_generator::{operation::cut::Cut, workspace::Workspace};
 
     #[test]
     fn test_gen_gcode() {
         let mut w = Workspace::init(100.0, 100.0);
-        w.add_cut(Cut::from_svg("../test_resources/box-all/input.svg".into()).unwrap());
+        w.add_operation(Cut::from_svg("../test_resources/box-all/input.svg".into()).unwrap());
 
         w.gen_gcode().unwrap().save("out.gcode").unwrap();
     }
