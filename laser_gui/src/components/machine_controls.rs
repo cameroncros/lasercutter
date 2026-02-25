@@ -1,18 +1,14 @@
 use dioxus::prelude::*;
 use lucide_dioxus::{Flame, House, MoveDown, MoveLeft, MoveRight, MoveUp};
 
-use crate::components::repeat_button::RepeatButton;
+use crate::{components::repeat_button::RepeatButton, style::*};
 
 #[component]
 pub(crate) fn MachineControls() -> Element {
     let mut rapid_rate = use_signal(|| 1.0);
     rsx! {
-        details {
-            class: "mb-4 border border-gray-200 rounded-lg open:shadow-lg transition-shadow duration-300 bg-gray-700 text-white text-xs font-semibold px-2 py-1 rounded w-full",
-            open: true, // TODO: Hide when unconnected, open when connected
-            summary { class: "p-4 font-semibold cursor-pointer bg-gray-100 hover:bg-gray-200 list-none bg-gray-700 hover:bg-gray-800 text-white text-xs font-semibold px-2 py-1 rounded w-full",
-                "Machine Controls"
-            }
+        details { class: DETAILS_CLASSES, open: true, // TODO: Hide when unconnected, open when connected
+            summary { class: SUMMARY_CLASSES, "Machine Controls" }
             div { class: "px-2",
                 div { class: "flex -mx-2",
                     div { class: "w-1/3 px-2",

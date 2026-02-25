@@ -1,8 +1,7 @@
-use std::time::{Duration, Instant};
-
-use dioxus::{core::Task, prelude::*};
+use dioxus::prelude::*;
 use laser_cutter::gcode_generator::{cut::Cut, workspace::Workspace};
 use lucide_dioxus::{
+    Delete,
     Minus,
     MoveDown,
     MoveLeft,
@@ -12,23 +11,23 @@ use lucide_dioxus::{
     Plus,
     RefreshCcw,
     RefreshCw,
+    Trash2,
 };
 
-use crate::components::repeat_button::RepeatButton;
+use crate::{components::repeat_button::RepeatButton, style::*};
 
 #[component]
 pub fn CutElem(cut: Cut, index: usize, is_last: bool, workspace: Signal<Workspace>) -> Element {
     let mut rapid_rate = use_signal(|| 1.0);
     let scale_step = 1.1f32;
     rsx! {
-        details { class: "mb-4 border border-gray-200 rounded-lg open:shadow-lg transition-shadow duration-300 bg-gray-700 text-white text-xs font-semibold px-2 py-1 rounded w-full",
-            summary { class: "p-4 font-semibold cursor-pointer bg-gray-100 hover:bg-gray-200 list-none bg-gray-700 hover:bg-gray-800 text-white text-xs font-semibold px-2 py-1 rounded w-full",
+        details { class: DETAILS_CLASSES,
+            summary { class: SUMMARY_CLASSES,
                 div { class: "flex items-center justify-between text-white",
                     "{cut}"
-                    div {
-                        class: "flex gap-2",
+                    div { class: "flex gap-2",
                         button {
-                            class: "bg-gray-700 hover:bg-gray-800 text-white text-xs font-semibold px-2 py-1 rounded w-full gap-0",
+                            class: BUTTON_CLASSES,
                             visibility: if index == 0 { "hidden" } else { "visible" },
                             onclick: move |_| {
                                 let mut workspace = workspace.write();
@@ -37,7 +36,7 @@ pub fn CutElem(cut: Cut, index: usize, is_last: bool, workspace: Signal<Workspac
                             MoveUp {}
                         }
                         button {
-                            class: "bg-gray-700 hover:bg-gray-800 text-white text-xs font-semibold px-2 py-1 rounded w-full gap-0",
+                            class: BUTTON_CLASSES,
                             visibility: if is_last { "hidden" } else { "visible" },
                             onclick: move |_| {
                                 let mut workspace = workspace.write();
@@ -45,9 +44,17 @@ pub fn CutElem(cut: Cut, index: usize, is_last: bool, workspace: Signal<Workspac
                             },
                             MoveDown {}
                         }
+                        button {
+                            class: BUTTON_CLASSES,
+                            onclick: move |_| {
+                                let mut workspace = workspace.write();
+                                workspace.items.remove(index);
+                            },
+                            Trash2 {}
+                        }
                     }
                 }
-
+            
             }
             // Controls section
             div { class: "px-2",

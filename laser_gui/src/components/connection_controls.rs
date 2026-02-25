@@ -5,6 +5,8 @@ use std::{
 
 use dioxus::prelude::*;
 
+use crate::style::*;
+
 const LOCAL: &str = "LOCAL";
 const NETWORK: &str = "NETWORK";
 
@@ -50,12 +52,8 @@ pub(crate) fn ConnectionControls() -> Element {
     let mut connected = use_signal(|| false);
     let mut connection_type = use_signal(|| ConnectionType::Local);
     rsx! {
-        details {
-            class: "mb-4 border border-gray-200 rounded-lg open:shadow-lg transition-shadow duration-300 bg-gray-700 text-white text-xs font-semibold px-2 py-1 rounded w-full",
-            open: !*connected.read(),
-            summary { class: "p-4 font-semibold cursor-pointer bg-gray-100 hover:bg-gray-200 list-none bg-gray-700 hover:bg-gray-800 text-white text-xs font-semibold px-2 py-1 rounded w-full",
-                "Connection Settings"
-            }
+        details { class: DETAILS_CLASSES, open: !*connected.read(),
+            summary { class: SUMMARY_CLASSES, "Connection Settings" }
             div {
                 select {
                     value: "{connection_type}",
@@ -85,7 +83,7 @@ pub(crate) fn ConnectionControls() -> Element {
             }
             span {
                 button {
-                    class: "flex flex-row justify-center items-center bg-gray-700 hover:bg-gray-800 text-white text-xs font-semibold px-2 py-1 rounded w-full",
+                    class: BUTTON_CLASSES,
                     onclick: move |_| {
                         if *connected.read() {
 

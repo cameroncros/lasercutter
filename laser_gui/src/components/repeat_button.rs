@@ -7,6 +7,8 @@ use dioxus::{
     prelude::*,
 };
 
+use crate::style::BUTTON_CLASSES;
+
 #[derive(Props, PartialEq, Clone)]
 pub(crate) struct RepeatButtonProps {
     repeat_fn: EventHandler<()>,
@@ -21,7 +23,7 @@ pub(crate) fn RepeatButton(props: RepeatButtonProps) -> Element {
 
     rsx! {
         button {
-            class: "flex flex-row justify-center items-center bg-gray-700 hover:bg-gray-800 text-white text-xs font-semibold px-2 py-1 rounded w-full",
+            class: BUTTON_CLASSES,
             onpointerdown: move |_| {
                 running.set(true);
 

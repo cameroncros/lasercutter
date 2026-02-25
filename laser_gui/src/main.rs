@@ -11,11 +11,15 @@ use laser_cutter::{
 };
 
 mod components;
+pub(crate) mod style;
 
-use crate::components::{
-    connection_controls::ConnectionControls,
-    cutlist::CutList,
-    machine_controls::MachineControls,
+use crate::{
+    components::{
+        connection_controls::ConnectionControls,
+        cutlist::CutList,
+        machine_controls::MachineControls,
+    },
+    style::MENU_BUTTON_CLASSES,
 };
 
 // We can import assets in dioxus with the `asset!` macro. This macro takes a path to an asset relative to the crate root.
@@ -94,7 +98,7 @@ fn App() -> Element {
                 }
                 div { class: "flex gap-2",
                     button {
-                        class: "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded",
+                        class: MENU_BUTTON_CLASSES,
                         onclick: move |_| {
                             if let Err(e) = new(&mut workspace) {
                                 errormsg.set(e.to_string())
@@ -102,7 +106,7 @@ fn App() -> Element {
                         },
                         "New"
                     }
-                    label { class: "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded",
+                    label { class: MENU_BUTTON_CLASSES,
                         "Load"
                         input {
                             r#type: "file",
@@ -123,7 +127,7 @@ fn App() -> Element {
                         }
                     }
                     button {
-                        class: "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded",
+                        class: MENU_BUTTON_CLASSES,
                         onclick: move |_| {
                             if let Err(e) = save(&mut workspace) {
                                 errormsg.set(e.to_string())
@@ -137,7 +141,7 @@ fn App() -> Element {
             div { class: "flex flex-1 overflow-hidden",
                 div { class: "w-72 bg-gray-500 p-3 flex flex-col gap-2 overflow-auto",
                     CutList { workspace }
-                    label { class: "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded",
+                    label { class: MENU_BUTTON_CLASSES,
                         "Add Cut"
                         input {
                             r#type: "file",
