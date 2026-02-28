@@ -14,6 +14,7 @@ deflate = "1.0.0"
 inflate = "0.4.5"
 nalgebra = "0.34.1"
 usvg = "0.47.0"
+cached = { version = "0.56.0", features = ["proc_macro"] }
 
 [dev-dependencies]
 test-case = "3.3.1"

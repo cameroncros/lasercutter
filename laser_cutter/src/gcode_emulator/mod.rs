@@ -104,7 +104,7 @@ impl GCodeEmulator {
         Ok(())
     }
 
-    pub fn to_svg_str(&self) -> anyhow::Result<String> {
+    pub fn to_svg_str(&mut self) -> anyhow::Result<String> {
         self.renderer.to_svg_str()
     }
 
