@@ -1,6 +1,5 @@
 use std::time::Duration;
 
-use base64::Engine;
 use dioxus::html::geometry::WheelDelta;
 // The dioxus prelude contains a ton of common items used in dioxus apps. It's a good idea to import wherever you
 // need dioxus
@@ -74,7 +73,7 @@ fn App() -> Element {
     let mut rendertime = use_signal(String::new);
     let mut refresh = use_signal(|| 0);
     let preview = use_resource(move || {
-        let refresh = refresh();
+        let _ = refresh();
         async move {
             let str = match render(&workspace.read()) {
                 Ok((svg, duration)) => {
@@ -91,7 +90,6 @@ fn App() -> Element {
         }
     });
 
-    let mut trigger_preview = use_resource(async || {});
     let status_msg = if !errormsg().is_empty() {
         errormsg()
     } else {
@@ -258,7 +256,7 @@ fn App() -> Element {
                                     p { "Generating..." }
                                 },
                             }
-
+                        
                         }
                     }
                 }

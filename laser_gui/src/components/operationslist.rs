@@ -1,6 +1,6 @@
 use dioxus::prelude::*;
 use laser_cutter::gcode_generator::{
-    operation::{cut::Cut, Operation},
+    operation::{cut::Cut, raster::Raster, Operation},
     workspace::Workspace,
 };
 use lucide_dioxus::{
@@ -19,46 +19,13 @@ use lucide_dioxus::{
 use crate::{components::repeat_button::RepeatButton, style::*};
 
 #[component]
-pub fn CutElem(cut: Cut, index: usize, is_last: bool, workspace: Signal<Workspace>) -> Element {
+pub fn MoveControls(workspace: Signal<Workspace>, index: usize) -> Element {
     let mut rapid_rate = use_signal(|| 1.0);
     let scale_step = 1.1f32;
     rsx! {
-        details { class: DETAILS_CLASSES,
-            summary { class: SUMMARY_CLASSES,
-                div { class: "flex items-center justify-between text-white",
-                    "{cut}"
-                    div { class: "flex gap-2",
-                        button {
-                            class: BUTTON_CLASSES,
-                            visibility: if index == 0 { "hidden" } else { "visible" },
-                            onclick: move |_| {
-                                let mut workspace = workspace.write();
-                                workspace.items.swap(index, index - 1);
-                            },
-                            MoveUp {}
-                        }
-                        button {
-                            class: BUTTON_CLASSES,
-                            visibility: if is_last { "hidden" } else { "visible" },
-                            onclick: move |_| {
-                                let mut workspace = workspace.write();
-                                workspace.items.swap(index, index + 1);
-                            },
-                            MoveDown {}
-                        }
-                        button {
-                            class: BUTTON_CLASSES,
-                            onclick: move |_| {
-                                let mut workspace = workspace.write();
-                                workspace.items.remove(index);
-                            },
-                            Trash2 {}
-                        }
-                    }
-                }
-            
-            }
-            // Controls section
+        div { class: DETAILS_CLASSES, // TODO: Hide when unconnected, open when connected
+            summary { class: SUMMARY_CLASSES, "Move Controls" }
+
             div { class: "px-2",
                 div { class: "flex -mx-2",
                     div { class: "w-1/3 px-2",
@@ -72,7 +39,6 @@ pub fn CutElem(cut: Cut, index: usize, is_last: bool, workspace: Signal<Workspac
                                     };
                                 }
                             },
-
                             Minus {}
                         }
                     }
@@ -240,6 +206,147 @@ pub fn CutElem(cut: Cut, index: usize, is_last: bool, workspace: Signal<Workspac
 }
 
 #[component]
+pub fn CutElem(cut: Cut, workspace: Signal<Workspace>, index: usize, is_last: bool) -> Element {
+    rsx! {
+        details { class: DETAILS_CLASSES,
+            summary { class: SUMMARY_CLASSES,
+                div { class: "flex items-center justify-between text-white",
+                    "{cut}"
+                    div { class: "flex gap-2",
+                        button {
+                            class: BUTTON_CLASSES,
+                            visibility: if index == 0 { "hidden" } else { "visible" },
+                            onclick: move |_| {
+                                let mut workspace = workspace.write();
+                                workspace.items.swap(index, index - 1);
+                            },
+                            MoveUp {}
+                        }
+                        button {
+                            class: BUTTON_CLASSES,
+                            visibility: if is_last { "hidden" } else { "visible" },
+                            onclick: move |_| {
+                                let mut workspace = workspace.write();
+                                workspace.items.swap(index, index + 1);
+                            },
+                            MoveDown {}
+                        }
+                        button {
+                            class: BUTTON_CLASSES,
+                            onclick: move |_| {
+                                let mut workspace = workspace.write();
+                                workspace.items.remove(index);
+                            },
+                            Trash2 {}
+                        }
+                    }
+                }
+
+            }
+            // Controls section
+            MoveControls { workspace, index }
+        }
+    }
+}
+
+#[component]
+pub fn RasterElem(
+    raster: Raster,
+    index: usize,
+    is_last: bool,
+    workspace: Signal<Workspace>,
+) -> Element {
+    let mut raster_scale = use_signal(|| 1.0);
+    let mut raster_angle = use_signal(|| 0.0);
+    rsx! {
+        div { class: DETAILS_CLASSES,
+            summary { class: SUMMARY_CLASSES,
+                div { class: "flex items-center justify-between text-white",
+                    "{raster}"
+                    div { class: "flex gap-2",
+                        button {
+                            class: BUTTON_CLASSES,
+                            visibility: if index == 0 { "hidden" } else { "visible" },
+                            onclick: move |_| {
+                                let mut workspace = workspace.write();
+                                workspace.items.swap(index, index - 1);
+                            },
+                            MoveUp {}
+                        }
+                        button {
+                            class: BUTTON_CLASSES,
+                            visibility: if is_last { "hidden" } else { "visible" },
+                            onclick: move |_| {
+                                let mut workspace = workspace.write();
+                                workspace.items.swap(index, index + 1);
+                            },
+                            MoveDown {}
+                        }
+                        button {
+                            class: BUTTON_CLASSES,
+                            onclick: move |_| {
+                                let mut workspace = workspace.write();
+                                workspace.items.remove(index);
+                            },
+                            Trash2 {}
+                        }
+                    }
+                }
+            }
+            // Raster controls
+            details { class: DETAILS_CLASSES, open: true, // TODO: Hide when unconnected, open when connected
+                summary { class: SUMMARY_CLASSES, "Raster Controls" }
+                div { class: "flex -mx-2",
+                    div { class: "w-1/4 px-2",
+                        RepeatButton { repeat_fn: move || { *raster_scale.write() -= 0.1 },
+                            Minus {}
+                        }
+                    }
+                    div { class: "w-1/2 px-2",
+                        input { value: "{raster_scale}" }
+                    }
+                    div { class: "w-1/4 px-2",
+                        RepeatButton { repeat_fn: move |_| { *raster_scale.write() += 0.1 },
+                            Plus {}
+                        }
+                    }
+                }
+                div { class: "flex -mx-2",
+                    div { class: "w-1/4 px-2",
+                        RepeatButton {
+                            repeat_fn: move || {
+                                            let current = *raster_angle.read();
+                                let mut new = (current - 1.0) % 360.0;
+                                while new < 0.0 {
+                                    new += 360.0;
+                                }
+                                *raster_angle.write() = new;
+                            },
+                            RefreshCw {}
+                        }
+                    }
+                    div { class: "w-1/2 px-2",
+                        input { value: "{raster_angle}" }
+                    }
+                    div { class: "w-1/4 px-2",
+                        RepeatButton {
+                            repeat_fn: move |_| {
+                                let current = *raster_angle.read();
+                                *raster_angle.write() = (current + 1.0) % 360.0;
+                            },
+                            RefreshCcw {}
+                        }
+                    }
+                }
+            }
+
+            // Controls section
+            MoveControls { workspace, index }
+        }
+    }
+}
+
+#[component]
 pub fn CutList(workspace: Signal<Workspace>) -> Element {
     let workspace_read = workspace.read();
 
@@ -256,9 +363,15 @@ pub fn CutList(workspace: Signal<Workspace>) -> Element {
                         }
                     }
                 }
-                Operation::Raster(_) => {
-                    // RasterElem {}
-                    rsx! {}
+                Operation::Raster(raster) => {
+                    rsx! {
+                        RasterElem {
+                            raster: raster.clone(),
+                            index,
+                            is_last: index == workspace_read.items().len() - 1,
+                            workspace,
+                        }
+                    }
                 }
             }
         }
