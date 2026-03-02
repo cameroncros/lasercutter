@@ -1,13 +1,23 @@
+#[cfg(not(any(feature = "svg_renderer", feature = "pixel_renderer")))]
+mod null_renderer;
+#[cfg(feature = "pixel_renderer")]
+mod pixel_renderer;
 mod renderer;
+#[cfg(feature = "svg_renderer")]
 mod svg_renderer;
 
 use anyhow::bail;
 
+#[cfg(not(any(feature = "svg_renderer", feature = "pixel_renderer")))]
+use crate::gcode_emulator::null_renderer::NullRenderer as MyRenderer;
+#[cfg(feature = "pixel_renderer")]
+use crate::gcode_emulator::pixel_renderer::PixelRenderer as MyRenderer;
+#[cfg(feature = "svg_renderer")]
+use crate::gcode_emulator::svg_renderer::SvgRenderer as MyRenderer;
 use crate::{
     gcode_emulator::{
         Positioning::Relative,
         renderer::{RenderSettings, Renderer},
-        svg_renderer::SvgRenderer,
     },
     types::{coord::Coord, gcode::GCode, machine_settings::MachineState},
 };
@@ -22,7 +32,7 @@ pub struct GCodeEmulator {
     state: MachineState,
     current_line: usize,
     positioning: Positioning,
-    renderer: SvgRenderer,
+    renderer: MyRenderer,
 }
 
 impl GCodeEmulator {
@@ -42,7 +52,7 @@ impl GCodeEmulator {
             },
             current_line: 0,
             positioning: Positioning::Absolute,
-            renderer: SvgRenderer::new(),
+            renderer: MyRenderer::new(),
         })
     }
 
@@ -104,8 +114,8 @@ impl GCodeEmulator {
         Ok(())
     }
 
-    pub fn to_svg_str(&mut self) -> anyhow::Result<String> {
-        self.renderer.to_svg_str()
+    pub fn to_img_url(&mut self) -> anyhow::Result<String> {
+        self.renderer.to_img_url()
     }
 
     pub fn save(&mut self, file: &str) -> anyhow::Result<()> {

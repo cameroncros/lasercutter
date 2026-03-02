@@ -1,4 +1,5 @@
 use anyhow::bail;
+use base64::Engine;
 use cached::proc_macro::once;
 use svg::{
     Document,
@@ -134,16 +135,6 @@ impl Renderer for SvgRenderer {
         Ok(())
     }
 
-    fn to_svg_str(&mut self) -> anyhow::Result<String> {
-        self.close_last()?;
-        let svg_str = if let Some(document) = &self.document {
-            document.to_string()
-        } else {
-            bail!("Document is not set");
-        };
-        Ok(svg_str)
-    }
-
     fn to_file(&mut self, file: &str) -> anyhow::Result<()> {
         self.close_last()?;
         if let Some(document) = &self.document {
@@ -152,5 +143,17 @@ impl Renderer for SvgRenderer {
             bail!("Document is not set");
         }
         Ok(())
+    }
+
+    fn to_img_url(&mut self) -> anyhow::Result<String> {
+        self.close_last()?;
+        let svg_str = if let Some(document) = &self.document {
+            document.to_string()
+        } else {
+            bail!("Document is not set");
+        };
+
+        let svg_b64 = base64::engine::general_purpose::STANDARD.encode(svg_str.as_bytes());
+        Ok(format!("data:image/svg+xml;base64,{}", svg_b64))
     }
 }

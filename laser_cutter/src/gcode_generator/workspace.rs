@@ -88,14 +88,22 @@ impl Workspace {
 
 #[cfg(test)]
 mod tests {
-    use crate::gcode_generator::{operation::cut::Cut, workspace::Workspace};
+    use crate::{
+        gcode_emulator::GCodeEmulator,
+        gcode_generator::{operation::cut::Cut, workspace::Workspace},
+    };
 
     #[test]
     fn test_gen_gcode() {
         let mut w = Workspace::init(100.0, 100.0);
-        w.add_operation(Cut::from_svg("../test_resources/box-all/input.svg".into()).unwrap());
+        w.add_operation(Cut::from_svg("/Users/cameron/Downloads/cubic02.svg".into()).unwrap());
 
-        w.gen_gcode().unwrap().save("out.gcode").unwrap();
+        let gcode = w.gen_gcode().unwrap();
+        // gcode.save("out.gcode").unwrap();
+
+        let mut svg_render = GCodeEmulator::from_gcode(gcode).unwrap();
+        svg_render.run().unwrap();
+        svg_render.to_img_url().unwrap();
     }
 
     // #[test_case("box-all")]

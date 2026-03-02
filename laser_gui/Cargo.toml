@@ -8,13 +8,12 @@ edition = "2021"
 
 [dependencies]
 dioxus = { version = "0.7.1", features = ["router", "fullstack"] }
-laser_cutter = { path = "../laser_cutter" }
+laser_cutter = { path = "../laser_cutter", features = ["svg_renderer"] }
 anyhow = "1.0.100"
 base64 = "0.22.1"
 rfd = "0.17.2"
 lucide-dioxus = { version = "2.563.0", features = ["all-icons"] }
 tokio = "1.49.0"
-web-sys = "0.3.85"
 
 [features]
 default = ["desktop"]

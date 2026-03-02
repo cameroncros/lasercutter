@@ -7,7 +7,10 @@ use dioxus::html::geometry::WheelDelta;
 use dioxus::prelude::*;
 use laser_cutter::{
     gcode_emulator::GCodeEmulator,
-    gcode_generator::{operation::cut::Cut, workspace::Workspace},
+    gcode_generator::{
+        operation::{cut::Cut, raster::Raster},
+        workspace::Workspace,
+    },
 };
 
 mod components;
@@ -30,7 +33,7 @@ const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
 fn main() {
     // The `launch` function is the main entry point for a dioxus app. It takes a component and renders it with the platform feature
     // you have enabled
-    dioxus::launch(App);
+    launch(App);
 }
 
 fn render(workspace: &Workspace) -> anyhow::Result<(String, Duration)> {
@@ -38,12 +41,9 @@ fn render(workspace: &Workspace) -> anyhow::Result<(String, Duration)> {
     let gcode = workspace.gen_gcode()?;
     let mut emu = GCodeEmulator::from_gcode(gcode)?;
     emu.run()?;
-    let svg = emu.to_svg_str()?;
-    let svg_b64 = base64::engine::general_purpose::STANDARD.encode(svg.as_bytes());
-    Ok((
-        format!("data:image/svg+xml;base64,{}", svg_b64),
-        start.elapsed(),
-    ))
+    let img_url = emu.to_img_url()?;
+
+    Ok((img_url, start.elapsed()))
 }
 
 fn new(workspace: &mut Signal<Workspace>) -> anyhow::Result<()> {
@@ -71,14 +71,27 @@ fn App() -> Element {
     let mut workspace = use_signal(|| Workspace::init(100.0, 100.0));
     let mut errormsg = use_signal(String::new);
     let mut zoom = use_signal(|| 1.0f32);
-
-    let (preview, rendertime) = match render(&workspace.read()) {
-        Ok((svg, duration)) => (svg, format!("{duration:?}")),
-        Err(e) => {
-            errormsg.set(e.to_string());
-            (String::new(), "Failed".to_string())
+    let mut rendertime = use_signal(String::new);
+    let mut refresh = use_signal(|| 0);
+    let preview = use_resource(move || {
+        let refresh = refresh();
+        async move {
+            let str = match render(&workspace.read()) {
+                Ok((svg, duration)) => {
+                    rendertime.set(format!("{duration:?}"));
+                    svg
+                }
+                Err(e) => {
+                    errormsg.set(e.to_string());
+                    rendertime.set("Failed".into());
+                    "".into()
+                }
+            };
+            str
         }
-    };
+    });
+
+    let mut trigger_preview = use_resource(async || {});
     let status_msg = if !errormsg().is_empty() {
         errormsg()
     } else {
@@ -103,6 +116,7 @@ fn App() -> Element {
                             if let Err(e) = new(&mut workspace) {
                                 errormsg.set(e.to_string())
                             }
+                            refresh += 1;
                         },
                         "New"
                     }
@@ -122,6 +136,7 @@ fn App() -> Element {
                                         }
                                     }
                                 }
+                                refresh += 1;
                             },
                             hidden: true,
                         }
@@ -152,14 +167,27 @@ fn App() -> Element {
                                 let mut ws = workspace.write();
 
                                 for file in evt.files() {
-                                    match Cut::from_svg(file.path()) {
-                                        Ok(cut) => ws.add_operation(cut),
-                                        Err(e) => {
-                                            errormsg.set(format!("Failed to load: {:?} - {}", file.path(), e));
-                                            return;
+                                    if file.path().extension().unwrap() == "svg" {
+                                        match Cut::from_svg(file.path()) {
+                                            Ok(cut) => ws.add_operation(cut),
+                                            Err(e) => {
+                                                errormsg
+                                                    .set(format!("Failed to load: {:?} - {}", file.path(), e));
+                                                return;
+                                            }
+                                        }
+                                    } else {
+                                        match Raster::from_image(file.path()) {
+                                            Ok(cut) => ws.add_operation(cut),
+                                            Err(e) => {
+                                                errormsg
+                                                    .set(format!("Failed to load: {:?} - {}", file.path(), e));
+                                                return;
+                                            }
                                         }
                                     }
                                 }
+                                refresh += 1;
                             },
                         }
                     }
@@ -217,12 +245,20 @@ fn App() -> Element {
                                 }
                             }
                         },
-                        div { class: "min-h-full min-w-full flex items-center justify-center p-6",
-                            img {
-                                class: "max-w-none max-h-none",
-                                style: "transform: scale({zoom}); transform-origin: 0 0;",
-                                src: preview,
+                        div { class: "min-h-full min-w-full",
+                            match &*preview.read() {
+                                Some(data_url) => rsx! {
+                                    img {
+                                        class: "max-w-none max-h-none",
+                                        style: "transform: scale({zoom}); transform-origin: 0 0;",
+                                        src: "{data_url}",
+                                    }
+                                },
+                                None => rsx! {
+                                    p { "Generating..." }
+                                },
                             }
+
                         }
                     }
                 }
