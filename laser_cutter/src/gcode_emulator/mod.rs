@@ -19,7 +19,11 @@ use crate::{
         Positioning::Relative,
         renderer::{RenderSettings, Renderer},
     },
-    types::{coord::Coord, gcode::GCode, machine_settings::MachineState},
+    types::{
+        coord::Coord,
+        gcode::{GCode, GCodeOp},
+        machine_settings::MachineState,
+    },
 };
 
 enum Positioning {
@@ -57,53 +61,65 @@ impl GCodeEmulator {
     }
 
     pub fn step(&mut self) -> anyhow::Result<bool> {
-        let next_real = loop {
+        let next = loop {
             let next = match self.gcode.lines.get(self.current_line) {
-                Some(line) => line.trim(),
+                Some(line) => line,
                 None => return Ok(false),
             };
             self.current_line += 1;
-            if next.starts_with(";") || next.is_empty() {
+            if next.code.is_none() {
                 continue;
             }
             break next;
         };
 
-        let parts = next_real.split_whitespace().collect::<Vec<&str>>();
-        match parts[0] {
-            "G0" => {
+        // Safe to unwrap, we have already validated that next.code is not None.
+        match next.code.as_ref().unwrap() {
+            GCodeOp::G0 => {
                 /* Move to X/Y rapid? */
-                let (x, y, _, _) = parse_args(&parts[1..])?;
-                self.renderer.draw_line(
-                    self.state.pos,
-                    Coord(x, y),
-                    RenderSettings {
-                        color: "red".to_string(),
-                        thickness: 0.1,
-                        opacity: 0.5,
-                    },
-                )?;
-                self.state.pos = Coord(x, y);
+                match next.coord {
+                    None => {
+                        bail!("G0 without a coord?!")
+                    }
+                    Some(coord) => {
+                        self.renderer.draw_line(
+                            self.state.pos,
+                            coord,
+                            RenderSettings {
+                                color: "red".to_string(),
+                                thickness: 0.1,
+                                opacity: 0.5,
+                            },
+                        )?;
+                        self.state.pos = coord;
+                    }
+                }
             }
-            "G1" => {
+            GCodeOp::G1 => {
                 /* Move to X/Y, with feed and power */
-                let (x, y, _, p) = parse_args(&parts[1..])?;
-                self.renderer.draw_line(
-                    self.state.pos,
-                    Coord(x, y),
-                    RenderSettings {
-                        color: "green".to_string(),
-                        thickness: 0.1,
-                        opacity: p / 1000f32,
-                    },
-                )?;
-                self.state.pos = Coord(x, y);
+                match next.coord {
+                    None => {
+                        bail!("G1 without a coord?!")
+                    }
+                    Some(coord) => {
+                        self.renderer.draw_line(
+                            self.state.pos,
+                            coord,
+                            RenderSettings {
+                                color: "green".to_string(),
+                                thickness: 0.1,
+                                opacity: next.power.unwrap_or(0.0) / 1000f32,
+                            },
+                        )?;
+                        self.state.pos = coord;
+                    }
+                }
             }
-            "G21" => { /* Set units to mm */ }
-            "G90" => self.positioning = Relative,
-            "M4" => { /* Laser On */ }
-            "M5" => { /* Laser Off */ }
-            _ => bail!("Unknown code: {}", next_real),
+            GCodeOp::G21 => { /* Set units to mm */ }
+            GCodeOp::G90 => self.positioning = Relative,
+            GCodeOp::M4 => { /* Laser On */ }
+            GCodeOp::M5 => { /* Laser Off */ }
+            _ => bail!("Unknown code: {}", next),
         }
 
         Ok(true)
@@ -121,26 +137,6 @@ impl GCodeEmulator {
     pub fn save(&mut self, file: &str) -> anyhow::Result<()> {
         self.renderer.to_file(file)
     }
-}
-
-fn parse_args(args: &[&str]) -> anyhow::Result<(f32, f32, f32, f32)> {
-    let mut x = 0f32;
-    let mut y = 0f32;
-    let mut s = 0f32;
-    let mut f = 0f32;
-
-    for arg in args {
-        match arg.chars().next().unwrap() {
-            'X' | 'x' => x = arg[1..].parse()?,
-            'Y' | 'y' => y = arg[1..].parse()?,
-            'S' | 's' => s = arg[1..].parse()?,
-            'F' | 'f' => f = arg[1..].parse()?,
-
-            _ => bail!("Unknown argument: {}", arg),
-        }
-    }
-
-    Ok((x, y, s, f))
 }
 
 #[cfg(test)]

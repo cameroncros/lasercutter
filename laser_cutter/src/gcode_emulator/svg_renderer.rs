@@ -1,6 +1,6 @@
 use anyhow::bail;
 use base64::Engine;
-use cached::proc_macro::once;
+use cached::once;
 use svg::{
     Document,
     node::element::{Group, Line, Path, path::Data},

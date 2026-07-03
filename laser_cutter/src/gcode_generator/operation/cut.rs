@@ -3,18 +3,13 @@ use std::{fmt::Display, fs, path::PathBuf};
 use anyhow::bail;
 use serde::{Deserialize, Serialize};
 use usvg::{
-    Node,
-    Path,
+    Node, Path,
     tiny_skia_path::PathSegment::{Close, CubicTo, LineTo, MoveTo, QuadTo},
 };
 
 use crate::{
     gcode_generator::operation::{
-        Line,
-        Operation,
-        OperationTrait,
-        deserialize_cuts,
-        serialize_cuts,
+        Line, Operation, OperationTrait, deserialize_cuts, serialize_cuts,
     },
     types::{
         coord::{Coord, midpoint},

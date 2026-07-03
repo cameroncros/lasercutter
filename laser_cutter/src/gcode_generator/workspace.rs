@@ -11,7 +11,7 @@ use crate::{
     gcode_generator::operation::Operation,
     types::{
         coord::Coord,
-        gcode::GCode,
+        gcode::{GCode, GCodeLine, GCodeOp},
         machine_settings::{MachineSettings, MachineState},
     },
 };
@@ -62,8 +62,16 @@ impl Workspace {
     pub fn gen_gcode(&self) -> anyhow::Result<GCode> {
         let mut items = self.items.clone();
         let mut gcode = vec![
-            "G21         ; Set units to mm".to_string(),
-            "G90         ; Absolute positioning".to_string(),
+            GCodeLine {
+                code: Some(GCodeOp::G21),
+                comment: Some("Set units to mm".to_string()),
+                ..Default::default()
+            },
+            GCodeLine {
+                code: Some(GCodeOp::G90),
+                comment: Some("Absolute positioning".to_string()),
+                ..Default::default()
+            },
         ];
         let mut machine_state = MachineState {
             pos: Coord(0.0, 0.0),
@@ -90,11 +98,14 @@ impl Workspace {
 mod tests {
     use crate::{
         gcode_emulator::GCodeEmulator,
-        gcode_generator::{operation::cut::Cut, workspace::Workspace},
+        gcode_generator::{
+            operation::{cut::Cut, raster::Raster},
+            workspace::Workspace,
+        },
     };
 
     #[test]
-    fn test_gen_gcode() {
+    fn test_gen_gcode_svg() {
         let mut w = Workspace::init(100.0, 100.0);
         w.add_operation(Cut::from_svg("/Users/cameron/Downloads/cubic02.svg".into()).unwrap());
 
@@ -104,6 +115,19 @@ mod tests {
         let mut svg_render = GCodeEmulator::from_gcode(gcode).unwrap();
         svg_render.run().unwrap();
         svg_render.to_img_url().unwrap();
+    }
+
+    #[test]
+    fn test_gen_gcode_raster() {
+        let mut w = Workspace::init(700.0, 700.0);
+        w.add_operation(Raster::from_image("/Users/cameron/Downloads/g2.png".into()).unwrap());
+
+        let gcode = w.gen_gcode().unwrap();
+        // gcode.save("out.gcode").unwrap();
+
+        let mut svg_render = GCodeEmulator::from_gcode(gcode).unwrap();
+        svg_render.run().unwrap();
+        let _img = svg_render.to_img_url().unwrap();
     }
 
     // #[test_case("box-all")]

@@ -1,9 +1,16 @@
+use std::default::Default;
+
 use base64::{Engine, engine::general_purpose};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::{
     gcode_generator::operation::{cut::Cut, raster::Raster},
-    types::{coord::Coord, machine_settings::MachineState, transform::Transform},
+    types::{
+        coord::Coord,
+        gcode::{GCodeLine, GCodeOp},
+        machine_settings::MachineState,
+        transform::Transform,
+    },
 };
 
 pub mod cut;
@@ -57,7 +64,7 @@ impl Operation {
     pub(crate) fn gen_gcode(
         &self,
         machine_state: &mut MachineState,
-    ) -> anyhow::Result<Vec<String>> {
+    ) -> anyhow::Result<Vec<GCodeLine>> {
         let (cuts, transform) = match &self {
             Operation::Cut(c) => (&c.cuts, &c.transform),
             Operation::Raster(r) => (&r.cuts, &r.transform),
@@ -68,30 +75,47 @@ impl Operation {
             let end = transform.apply(end);
             if start != machine_state.pos {
                 if machine_state.e {
-                    gcode.push("M5".to_string());
+                    gcode.push(GCodeLine {
+                        code: Some(GCodeOp::M5),
+                        ..Default::default()
+                    });
                     machine_state.e = false;
                 }
-                gcode.push(format!("G0 X{} Y{}", start.0, start.1));
+                gcode.push(GCodeLine {
+                    code: Some(GCodeOp::G0),
+                    coord: Some(start),
+                    ..Default::default()
+                });
                 machine_state.pos = start;
             }
             if !machine_state.e {
-                gcode.push("M4".to_string());
+                gcode.push(GCodeLine {
+                    code: Some(GCodeOp::M4),
+                    ..Default::default()
+                });
                 machine_state.e = true;
             }
-            let mut move_gcode = format!("G1 X{} Y{}", end.0, end.1);
+            let mut move_gcode = GCodeLine {
+                code: Some(GCodeOp::G1),
+                coord: Some(end),
+                ..Default::default()
+            };
             if machine_state.s != 1000.0 {
-                move_gcode.push_str(&format!(" S{}", 1000.0));
+                move_gcode.power = Some(machine_state.s);
                 machine_state.s = 1000.0;
             }
             if machine_state.f != 100.0 {
-                move_gcode.push_str(&format!(" F{}", 100.0));
+                move_gcode.feedrate = Some(machine_state.f);
                 machine_state.f = 100.0;
             }
             gcode.push(move_gcode);
             machine_state.pos = end;
         }
 
-        gcode.push("M5".to_string());
+        gcode.push(GCodeLine {
+            code: Some(GCodeOp::M5),
+            ..Default::default()
+        });
         machine_state.e = false;
         Ok(gcode)
     }

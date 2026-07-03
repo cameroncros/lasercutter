@@ -5,11 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     gcode_generator::operation::{
-        Line,
-        Operation,
-        OperationTrait,
-        deserialize_cuts,
-        serialize_cuts,
+        Line, Operation, OperationTrait, deserialize_cuts, serialize_cuts,
     },
     types::{coord::Coord, transform::Transform},
 };

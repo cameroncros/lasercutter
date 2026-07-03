@@ -12,7 +12,7 @@ laser_cutter = { path = "../laser_cutter", features = ["svg_renderer"] }
 anyhow = "1.0.100"
 base64 = "0.22.1"
 rfd = "0.17.2"
-lucide-dioxus = { version = "2.563.0", features = ["all-icons"] }
+lucide-dioxus = { version = "3.22.0", features = ["all-icons"] }
 tokio = "1.49.0"
 
 [features]

@@ -1,3 +1,5 @@
+use std::sync::atomic::{AtomicBool, AtomicU8};
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use dioxus::{
@@ -25,26 +27,18 @@ pub(crate) fn RepeatButton(props: RepeatButtonProps) -> Element {
         button {
             class: BUTTON_CLASSES,
             onpointerdown: move |_| {
+                if *running.read() {
+                    return;
+                }
                 running.set(true);
 
                 let t = spawn(async move {
                     props.repeat_fn.call(());
-                    let start = Instant::now();
-                    while *running.read() {
-                        if start.elapsed().as_millis() > 300 {
-                            break;
-                        }
-                        tokio::time::sleep(Duration::from_millis(5)).await;
-                    }
-
+                    tokio::time::sleep(Duration::from_millis(300)).await;
                     while *running.read() {
                         props.repeat_fn.call(());
-                        let start = Instant::now();
                         while *running.read() {
-                            if start.elapsed().as_millis() > 20 {
-                                break;
-                            }
-                            tokio::time::sleep(Duration::from_millis(5)).await;
+                            tokio::time::sleep(Duration::from_millis(20)).await;
                         }
                     }
                 });

@@ -4,16 +4,7 @@ use laser_cutter::gcode_generator::{
     workspace::Workspace,
 };
 use lucide_dioxus::{
-    Minus,
-    MoveDown,
-    MoveLeft,
-    MoveRight,
-    MoveUp,
-    OctagonMinus,
-    Plus,
-    RefreshCcw,
-    RefreshCw,
-    Trash2,
+    Minus, MoveDown, MoveLeft, MoveRight, MoveUp, OctagonMinus, Plus, RefreshCcw, RefreshCw, Trash2,
 };
 
 use crate::{components::repeat_button::RepeatButton, style::*};
@@ -241,7 +232,7 @@ pub fn CutElem(cut: Cut, workspace: Signal<Workspace>, index: usize, is_last: bo
                         }
                     }
                 }
-
+            
             }
             // Controls section
             MoveControls { workspace, index }
@@ -298,9 +289,7 @@ pub fn RasterElem(
                 summary { class: SUMMARY_CLASSES, "Raster Controls" }
                 div { class: "flex -mx-2",
                     div { class: "w-1/4 px-2",
-                        RepeatButton { repeat_fn: move || { *raster_scale.write() -= 0.1 },
-                            Minus {}
-                        }
+                        RepeatButton { repeat_fn: move || { *raster_scale.write() -= 0.1 }, Minus {} }
                     }
                     div { class: "w-1/2 px-2",
                         input { value: "{raster_scale}" }
@@ -315,7 +304,7 @@ pub fn RasterElem(
                     div { class: "w-1/4 px-2",
                         RepeatButton {
                             repeat_fn: move || {
-                                            let current = *raster_angle.read();
+                                let current = *raster_angle.read();
                                 let mut new = (current - 1.0) % 360.0;
                                 while new < 0.0 {
                                     new += 360.0;

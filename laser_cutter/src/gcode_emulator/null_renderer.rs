@@ -22,7 +22,7 @@ impl Renderer for NullRenderer {
         Ok(())
     }
 
-    fn to_file(&mut self, file: &str) -> anyhow::Result<()> {
+    fn to_file(&mut self, _file: &str) -> anyhow::Result<()> {
         Ok(())
     }
 
