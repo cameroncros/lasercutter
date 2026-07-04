@@ -1,3 +1,4 @@
+use std::sync::Arc;
 // The dioxus prelude contains a ton of common items used in dioxus apps. It's a good idea to import wherever you
 // need dioxus
 use dioxus::prelude::*;
@@ -32,22 +33,20 @@ fn App() -> Element {
     let workspace = use_signal(|| Workspace::init(100.0, 100.0));
     let errormsg = use_signal(String::new);
     let rendertime = use_signal(String::new);
-    let refresh = use_signal(|| 0);
 
     rsx! {
         document::Link { rel: "icon", href: FAVICON }
         document::Link { rel: "stylesheet", href: TAILWIND_CSS }
 
         div { class: "h-screen flex flex-col",
-            TopBar { workspace, errormsg, refresh }
+            TopBar { workspace, errormsg }
 
             div { class: "v-screen flex flex-row",
-                LeftBar { workspace, errormsg, refresh },
+                LeftBar { workspace, errormsg },
                 WorkspaceView {
                     workspace,
                     rendertime,
                     errormsg,
-                    refresh,
                 },
                 RightBar {}
             }

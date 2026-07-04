@@ -19,41 +19,36 @@ pub(crate) struct RepeatButtonProps {
 
 #[component]
 pub(crate) fn RepeatButton(props: RepeatButtonProps) -> Element {
-    let mut running = use_signal(|| false);
-
     let mut task = use_signal(|| None::<Task>);
 
     rsx! {
         button {
             class: BUTTON_CLASSES,
             onpointerdown: move |_| {
-                if *running.read() {
-                    return;
+                if let Some(t) = task.write().take() {
+                    t.cancel();
                 }
-                running.set(true);
-
                 let t = spawn(async move {
                     props.repeat_fn.call(());
                     tokio::time::sleep(Duration::from_millis(300)).await;
-                    while *running.read() {
+                    loop {
                         props.repeat_fn.call(());
-                        while *running.read() {
-                            tokio::time::sleep(Duration::from_millis(20)).await;
-                        }
+                        tokio::time::sleep(Duration::from_millis(100)).await;
                     }
                 });
-
                 task.set(Some(t));
             },
 
             onpointerup: move |_| {
-                running.set(false);
-                task.write().take();
+                if let Some(t) = task.write().take() {
+                    t.cancel();
+                }
             },
 
             onpointerleave: move |_| {
-                running.set(false);
-                task.write().take();
+                if let Some(t) = task.write().take() {
+                    t.cancel();
+                }
             },
             {props.children}
         }

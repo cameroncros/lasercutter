@@ -19,11 +19,7 @@ fn save(workspace: &mut Signal<Workspace>) -> anyhow::Result<()> {
 }
 
 #[component]
-pub fn TopBar(
-    workspace: Signal<Workspace>,
-    errormsg: Signal<String>,
-    refresh: Signal<i32>,
-) -> Element {
+pub fn TopBar(workspace: Signal<Workspace>, errormsg: Signal<String>) -> Element {
     rsx! {
         div { class: "flex items-center justify-between bg-gray-800 text-white px-4 py-3",
             div { class: "flex items-baseline gap-2",
@@ -37,7 +33,6 @@ pub fn TopBar(
                         if let Err(e) = new(&mut workspace) {
                             errormsg.set(e.to_string())
                         }
-                        refresh += 1;
                     },
                     "New"
                 }
@@ -57,7 +52,6 @@ pub fn TopBar(
                                     }
                                 }
                             }
-                            refresh += 1;
                         },
                         hidden: true,
                     }

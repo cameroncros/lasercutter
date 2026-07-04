@@ -6,11 +6,7 @@ use laser_cutter::gcode_generator::operation::raster::Raster;
 use laser_cutter::gcode_generator::workspace::Workspace;
 
 #[component]
-pub fn LeftBar(
-    workspace: Signal<Workspace>,
-    errormsg: Signal<String>,
-    refresh: Signal<i32>,
-) -> Element {
+pub fn LeftBar(workspace: Signal<Workspace>, errormsg: Signal<String>) -> Element {
     rsx! {
         div { class: "bg-gray-500 p-3 flex flex-col gap-2 overflow-auto",
             CutList { workspace }
@@ -45,7 +41,6 @@ pub fn LeftBar(
                                 }
                             }
                         }
-                        refresh += 1;
                     },
                 }
             }
