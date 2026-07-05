@@ -1,3 +1,4 @@
+use crate::style::{STATUS_BAR_CLASSES, STATUS_BAR_SUBTEXT_CLASSES};
 use dioxus::prelude::*;
 
 #[component]
@@ -9,9 +10,9 @@ pub fn StatusBar(errormsg: Signal<String>, rendertime: Signal<String>) -> Elemen
     };
 
     rsx! {
-        div { class: "bg-gray-900 text-gray-100 px-4 py-2 text-sm flex items-center justify-between",
+        div { class: STATUS_BAR_CLASSES,
             span { "Status: {status_msg}" }
-            span { class: "text-gray-400", "{rendertime}" }
+            span { class: STATUS_BAR_SUBTEXT_CLASSES, "{rendertime}" }
         }
     }
 }

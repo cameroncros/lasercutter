@@ -1,4 +1,4 @@
-use crate::style::MENU_BUTTON_CLASSES;
+use crate::style::{MENU_BUTTON_CLASSES, TOP_BAR_CLASSES, TOP_BAR_TITLE_CONTAINER_CLASSES, TOP_BAR_TITLE_CLASSES, TOP_BAR_SUBTITLE_CLASSES, TOP_BAR_ACTIONS_CONTAINER_CLASSES};
 use dioxus::prelude::*;
 use laser_cutter::gcode_generator::workspace::Workspace;
 
@@ -21,12 +21,12 @@ fn save(workspace: &mut Signal<Workspace>) -> anyhow::Result<()> {
 #[component]
 pub fn TopBar(workspace: Signal<Workspace>, errormsg: Signal<String>) -> Element {
     rsx! {
-        div { class: "flex items-center justify-between bg-gray-800 text-white px-4 py-3",
-            div { class: "flex items-baseline gap-2",
-                span { class: "text-2xl font-semibold", "Laser Cutter" }
-                span { class: "text-gray-300", "a simple laser cutter" }
+        div { class: TOP_BAR_CLASSES,
+            div { class: TOP_BAR_TITLE_CONTAINER_CLASSES,
+                span { class: TOP_BAR_TITLE_CLASSES, "Laser Cutter" }
+                span { class: TOP_BAR_SUBTITLE_CLASSES, "a simple laser cutter" }
             }
-            div { class: "flex gap-2",
+            div { class: TOP_BAR_ACTIONS_CONTAINER_CLASSES,
                 button {
                     class: MENU_BUTTON_CLASSES,
                     onclick: move |_| {

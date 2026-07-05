@@ -1,5 +1,6 @@
 use crate::components::operationslist::CutList;
 use crate::style::MENU_BUTTON_CLASSES;
+use crate::style::LEFT_BAR_CLASSES;
 use dioxus::prelude::*;
 use laser_cutter::gcode_generator::operation::cut::Cut;
 use laser_cutter::gcode_generator::operation::raster::Raster;
@@ -8,7 +9,7 @@ use laser_cutter::gcode_generator::workspace::Workspace;
 #[component]
 pub fn LeftBar(workspace: Signal<Workspace>, errormsg: Signal<String>) -> Element {
     rsx! {
-        div { class: "bg-gray-500 p-3 flex flex-col gap-2 overflow-auto",
+        div { class: LEFT_BAR_CLASSES,
             CutList { workspace }
             label { class: MENU_BUTTON_CLASSES,
                 "Add Cut"

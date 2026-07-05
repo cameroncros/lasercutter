@@ -7,8 +7,8 @@ use lucide_dioxus::{
     Minus, MoveDown, MoveLeft, MoveRight, MoveUp, OctagonMinus, Plus, RefreshCcw, RefreshCw, Trash2,
 };
 
+use crate::style::{ITEM_ACTIONS_CONTAINER_CLASSES, ITEM_TITLE_CONTAINER_CLASSES};
 use crate::{components::repeat_button::RepeatButton, style::*};
-
 #[component]
 pub fn MoveControls(workspace: Signal<Workspace>, index: usize) -> Element {
     let mut rapid_rate = use_signal(|| 1.0);
@@ -17,9 +17,9 @@ pub fn MoveControls(workspace: Signal<Workspace>, index: usize) -> Element {
         div { class: DETAILS_CLASSES, // TODO: Hide when unconnected, open when connected
             summary { class: SUMMARY_CLASSES, "Move Controls" }
 
-            div { class: "px-2",
-                div { class: "flex -mx-2",
-                    div { class: "w-1/3 px-2",
+            div { class: GRID_CONTAINER_CLASSES,
+                div { class: GRID_ROW_CLASSES,
+                    div { class: GRID_CELL_CLASSES,
                         RepeatButton {
                             repeat_fn: move || {
                                 let mut workspace = workspace.write();
@@ -33,7 +33,7 @@ pub fn MoveControls(workspace: Signal<Workspace>, index: usize) -> Element {
                             Minus {}
                         }
                     }
-                    div { class: "w-1/3 px-2",
+                    div { class: GRID_CELL_CLASSES,
                         RepeatButton {
                             repeat_fn: move |_| {
                                 let mut workspace = workspace.write();
@@ -48,7 +48,7 @@ pub fn MoveControls(workspace: Signal<Workspace>, index: usize) -> Element {
                             MoveUp {}
                         }
                     }
-                    div { class: "w-1/3 px-2",
+                    div { class: GRID_CELL_CLASSES,
                         RepeatButton {
                             repeat_fn: move |_| {
                                 let mut workspace = workspace.write();
@@ -63,8 +63,8 @@ pub fn MoveControls(workspace: Signal<Workspace>, index: usize) -> Element {
                         }
                     }
                 }
-                div { class: "flex -mx-2",
-                    div { class: "w-1/3 px-2",
+                div { class: GRID_ROW_CLASSES,
+                    div { class: GRID_CELL_CLASSES,
                         RepeatButton {
                             repeat_fn: move |_| {
                                 let mut workspace = workspace.write();
@@ -78,7 +78,7 @@ pub fn MoveControls(workspace: Signal<Workspace>, index: usize) -> Element {
                             MoveLeft {}
                         }
                     }
-                    div { class: "w-1/3 px-2",
+                    div { class: GRID_CELL_CLASSES,
                         RepeatButton {
                             repeat_fn: move |_| {
                                 let mut workspace = workspace.write();
@@ -92,7 +92,7 @@ pub fn MoveControls(workspace: Signal<Workspace>, index: usize) -> Element {
                             OctagonMinus {}
                         }
                     }
-                    div { class: "w-1/3 px-2",
+                    div { class: GRID_CELL_CLASSES,
                         RepeatButton {
                             repeat_fn: move |_| {
                                 let mut workspace = workspace.write();
@@ -107,8 +107,8 @@ pub fn MoveControls(workspace: Signal<Workspace>, index: usize) -> Element {
                         }
                     }
                 }
-                div { class: "flex -mx-2",
-                    div { class: "w-1/3 px-2",
+                div { class: GRID_ROW_CLASSES,
+                    div { class: GRID_CELL_CLASSES,
                         RepeatButton {
                             repeat_fn: move |_| {
                                 let mut workspace = workspace.write();
@@ -122,7 +122,7 @@ pub fn MoveControls(workspace: Signal<Workspace>, index: usize) -> Element {
                             RefreshCw {}
                         }
                     }
-                    div { class: "w-1/3 px-2",
+                    div { class: GRID_CELL_CLASSES,
                         RepeatButton {
                             repeat_fn: move |_| {
                                 let mut workspace = workspace.write();
@@ -136,7 +136,7 @@ pub fn MoveControls(workspace: Signal<Workspace>, index: usize) -> Element {
                             MoveDown {}
                         }
                     }
-                    div { class: "w-1/3 px-2",
+                    div { class: GRID_CELL_CLASSES,
                         RepeatButton {
                             repeat_fn: move |_| {
                                 let mut workspace = workspace.write();
@@ -151,11 +151,9 @@ pub fn MoveControls(workspace: Signal<Workspace>, index: usize) -> Element {
                         }
                     }
                 }
-                div { class: "flex -mx-2",
+                div { class: GRID_ROW_CLASSES,
                     button {
-                        class: "rounded-l",
-                        class: "w-1/4 bg-gray-300 text-gray-800 font-bold py-2 px-4",
-                        class: if *rapid_rate.read() == 0.1 { "bg-gray-400" } else { "hover:bg-gray-400" },
+                        class: format!("{} {} {}", RAPID_BUTTON_LEFT_CLASSES, RAPID_BUTTON_CLASSES, if *rapid_rate.read() == 0.1 { "bg-gray-400" } else { "hover:bg-gray-400" }),
                         disabled: *rapid_rate.read() == 0.1,
                         onclick: move |_| {
                             rapid_rate.set(0.1);
@@ -163,8 +161,7 @@ pub fn MoveControls(workspace: Signal<Workspace>, index: usize) -> Element {
                         "0.1"
                     }
                     button {
-                        class: "w-1/4 bg-gray-300 text-gray-800 font-bold py-2 px-4",
-                        class: if *rapid_rate.read() == 1.0 { "bg-gray-400" } else { "hover:bg-gray-400" },
+                        class: format!("{} {}", RAPID_BUTTON_CLASSES, if *rapid_rate.read() == 1.0 { "bg-gray-400" } else { "hover:bg-gray-400" }),
                         disabled: *rapid_rate.read() == 1.0,
                         onclick: move |_| {
                             rapid_rate.set(1.0);
@@ -172,8 +169,7 @@ pub fn MoveControls(workspace: Signal<Workspace>, index: usize) -> Element {
                         "1"
                     }
                     button {
-                        class: "w-1/4 bg-gray-300 text-gray-800 font-bold py-2 px-4",
-                        class: if *rapid_rate.read() == 10.0 { "bg-gray-400" } else { "hover:bg-gray-400" },
+                        class: format!("{} {}", RAPID_BUTTON_CLASSES, if *rapid_rate.read() == 10.0 { "bg-gray-400" } else { "hover:bg-gray-400" }),
                         disabled: *rapid_rate.read() == 10.0,
                         onclick: move |_| {
                             rapid_rate.set(10.0);
@@ -181,9 +177,7 @@ pub fn MoveControls(workspace: Signal<Workspace>, index: usize) -> Element {
                         "10"
                     }
                     button {
-                        class: "rounded-r",
-                        class: "w-1/4 bg-gray-300 text-gray-800 font-bold py-2 px-4",
-                        class: if *rapid_rate.read() == 100.0 { "bg-gray-400" } else { "hover:bg-gray-400" },
+                        class: format!("{} {} {}", RAPID_BUTTON_RIGHT_CLASSES, RAPID_BUTTON_CLASSES, if *rapid_rate.read() == 100.0 { "bg-gray-400" } else { "hover:bg-gray-400" }),
                         disabled: *rapid_rate.read() == 100.0,
                         onclick: move |_| {
                             rapid_rate.set(100.0);
@@ -201,9 +195,9 @@ pub fn CutElem(cut: Cut, workspace: Signal<Workspace>, index: usize, is_last: bo
     rsx! {
         details { class: DETAILS_CLASSES,
             summary { class: SUMMARY_CLASSES,
-                div { class: "flex items-center justify-between text-white",
+                div { class: ITEM_TITLE_CONTAINER_CLASSES,
                     "{cut}"
-                    div { class: "flex gap-2",
+                    div { class: ITEM_ACTIONS_CONTAINER_CLASSES,
                         button {
                             class: BUTTON_CLASSES,
                             visibility: if index == 0 { "hidden" } else { "visible" },
@@ -232,7 +226,7 @@ pub fn CutElem(cut: Cut, workspace: Signal<Workspace>, index: usize, is_last: bo
                         }
                     }
                 }
-            
+
             }
             // Controls section
             MoveControls { workspace, index }
@@ -252,9 +246,9 @@ pub fn RasterElem(
     rsx! {
         div { class: DETAILS_CLASSES,
             summary { class: SUMMARY_CLASSES,
-                div { class: "flex items-center justify-between text-white",
+                div { class: ITEM_TITLE_CONTAINER_CLASSES,
                     "{raster}"
-                    div { class: "flex gap-2",
+                    div { class: ITEM_ACTIONS_CONTAINER_CLASSES,
                         button {
                             class: BUTTON_CLASSES,
                             visibility: if index == 0 { "hidden" } else { "visible" },
@@ -287,21 +281,27 @@ pub fn RasterElem(
             // Raster controls
             details { class: DETAILS_CLASSES, open: true, // TODO: Hide when unconnected, open when connected
                 summary { class: SUMMARY_CLASSES, "Raster Controls" }
-                div { class: "flex -mx-2",
-                    div { class: "w-1/4 px-2",
-                        RepeatButton { repeat_fn: move || { *raster_scale.write() -= 0.1 }, Minus {} }
+                div { class: GRID_CONTAINER_CLASSES,
+                    div { class: GRID_ROW_CLASSES,
+                        div { class: INPUT_CELL_CLASSES,
+                            RepeatButton { repeat_fn: move || { *raster_scale.write() -= 0.1 }, Minus {} }
+                        }
                     }
-                    div { class: "w-1/2 px-2",
-                        input { value: "{raster_scale}" }
+                    div { class: GRID_ROW_CLASSES,
+                        div { class: INPUT_CELL_WIDE_CLASSES,
+                            input { value: "{raster_scale}" }
+                        }
                     }
-                    div { class: "w-1/4 px-2",
-                        RepeatButton { repeat_fn: move |_| { *raster_scale.write() += 0.1 },
-                            Plus {}
+                    div { class: GRID_ROW_CLASSES,
+                        div { class: INPUT_CELL_CLASSES,
+                            RepeatButton { repeat_fn: move |_| { *raster_scale.write() += 0.1 },
+                                Plus {}
+                            }
                         }
                     }
                 }
-                div { class: "flex -mx-2",
-                    div { class: "w-1/4 px-2",
+                div { class: GRID_ROW_CLASSES,
+                    div { class: INPUT_CELL_CLASSES,
                         RepeatButton {
                             repeat_fn: move || {
                                 let current = *raster_angle.read();
@@ -314,10 +314,10 @@ pub fn RasterElem(
                             RefreshCw {}
                         }
                     }
-                    div { class: "w-1/2 px-2",
+                    div { class: INPUT_CELL_WIDE_CLASSES,
                         input { value: "{raster_angle}" }
                     }
-                    div { class: "w-1/4 px-2",
+                    div { class: INPUT_CELL_CLASSES,
                         RepeatButton {
                             repeat_fn: move |_| {
                                 let current = *raster_angle.read();

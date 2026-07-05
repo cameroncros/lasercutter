@@ -5,6 +5,7 @@ use laser_cutter::gcode_generator::workspace::Workspace;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
+use crate::style::*;
 
 fn render(workspace: &Workspace) -> anyhow::Result<(String, Duration)> {
     let start = std::time::Instant::now();
@@ -57,32 +58,38 @@ pub fn WorkspaceView(
     });
 
     rsx! {
-        div { class: "flex-1 bg-gray-300 flex flex-col overflow-hidden",
-            div { class: "flex items-center justify-between px-3 py-2 bg-gray-200 border-b border-gray-400",
-                span { class: "text-sm text-gray-700", "Preview" }
-                div { class: "flex items-center gap-2",
+        div { class: WORKSPACE_VIEW_CLASSES,
+            div { class: PREVIEW_HEADER_CLASSES,
+                span { class: PREVIEW_TEXT_CLASSES, "Preview" }
+                div { class: PREVIEW_ZOOM_CONTAINER_CLASSES,
                     button {
-                        class: "bg-gray-700 hover:bg-gray-800 text-white text-xs font-semibold px-2 py-1 rounded",
-                        onclick: move |_| zoom.set((zoom() - 0.1).max(0.2)),
+                        class: SMALL_BUTTON_CLASSES,
+                        onclick: move |_| {
+                            zoom.set((zoom() - 0.1).max(0.2));
+                        },
                         "-"
                     }
-                    span { class: "text-xs text-gray-700 w-12 text-center",
+                    span { class: PREVIEW_ZOOM_VALUE_CLASSES,
                         "{(zoom() * 100.0).round()}%"
                     }
                     button {
-                        class: "bg-gray-700 hover:bg-gray-800 text-white text-xs font-semibold px-2 py-1 rounded",
-                        onclick: move |_| zoom.set((zoom() + 0.1).min(5.0)),
+                        class: SMALL_BUTTON_CLASSES,
+                        onclick: move |_| {
+                            zoom.set((zoom() + 0.1).min(5.0));
+                        },
                         "+"
                     }
                     button {
-                        class: "bg-gray-700 hover:bg-gray-800 text-white text-xs font-semibold px-2 py-1 rounded",
-                        onclick: move |_| zoom.set(1.0),
+                        class: SMALL_BUTTON_CLASSES,
+                        onclick: move |_| {
+                            zoom.set(1.0);
+                        },
                         "Reset"
                     }
                 }
             }
             div {
-                class: "flex-1 overflow-auto",
+                class: PREVIEW_VIEWPORT_CLASSES,
                 onwheel: move |e| {
                     let delta = e.delta();
                     match delta {
@@ -113,7 +120,7 @@ pub fn WorkspaceView(
                     match &*preview.read() {
                         Some(data_url) => rsx! {
                             img {
-                                class: "max-w-none max-h-none",
+                                class: PREVIEW_IMAGE_CLASSES,
                                 style: "transform: scale({zoom}); transform-origin: 0 0;",
                                 src: "{data_url}",
                             }

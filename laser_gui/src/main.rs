@@ -1,6 +1,3 @@
-use std::sync::Arc;
-// The dioxus prelude contains a ton of common items used in dioxus apps. It's a good idea to import wherever you
-// need dioxus
 use dioxus::prelude::*;
 use laser_cutter::gcode_generator::workspace::Workspace;
 
