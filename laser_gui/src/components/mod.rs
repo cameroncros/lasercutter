@@ -7,3 +7,4 @@ pub mod rightbar;
 pub mod statusbar;
 pub(crate) mod topbar;
 pub mod workspace;
+pub mod log_window;

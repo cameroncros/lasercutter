@@ -2,8 +2,6 @@ use dioxus::html::geometry::WheelDelta;
 use dioxus::prelude::*;
 use laser_cutter::gcode_emulator::GCodeEmulator;
 use laser_cutter::gcode_generator::workspace::Workspace;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
 use std::time::Duration;
 use crate::style::*;
 
@@ -38,7 +36,7 @@ fn render(workspace: &Workspace) -> anyhow::Result<(String, Duration)> {
 pub fn WorkspaceView(
     workspace: Signal<Workspace>,
     rendertime: Signal<String>,
-    errormsg: Signal<String>,
+    msglog: Signal<Vec<String>>,
 ) -> Element {
     let mut zoom = use_signal(|| 1.0f32);
 
@@ -49,7 +47,7 @@ pub fn WorkspaceView(
                 svg
             }
             Err(e) => {
-                errormsg.set(e.to_string());
+                msglog.with_mut(|v| v.push(e.to_string()));
                 rendertime.set("Failed".into());
                 "".into()
             }

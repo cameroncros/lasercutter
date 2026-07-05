@@ -7,7 +7,7 @@ use laser_cutter::gcode_generator::operation::raster::Raster;
 use laser_cutter::gcode_generator::workspace::Workspace;
 
 #[component]
-pub fn LeftBar(workspace: Signal<Workspace>, errormsg: Signal<String>) -> Element {
+pub fn LeftBar(workspace: Signal<Workspace>, msglog: Signal<Vec<String>>) -> Element {
     rsx! {
         div { class: LEFT_BAR_CLASSES,
             CutList { workspace }
@@ -26,8 +26,8 @@ pub fn LeftBar(workspace: Signal<Workspace>, errormsg: Signal<String>) -> Elemen
                                 match Cut::from_svg(file.path()) {
                                     Ok(cut) => ws.add_operation(cut),
                                     Err(e) => {
-                                        errormsg
-                                            .set(format!("Failed to load: {:?} - {}", file.path(), e));
+                                        msglog
+                                            .with_mut(|v| v.push(format!("Failed to load: {:?} - {}", file.path(), e)));
                                         return;
                                     }
                                 }
@@ -35,8 +35,8 @@ pub fn LeftBar(workspace: Signal<Workspace>, errormsg: Signal<String>) -> Elemen
                                 match Raster::from_image(file.path()) {
                                     Ok(cut) => ws.add_operation(cut),
                                     Err(e) => {
-                                        errormsg
-                                            .set(format!("Failed to load: {:?} - {}", file.path(), e));
+                                        msglog
+                                            .with_mut(|v| v.push(format!("Failed to load: {:?} - {}", file.path(), e)));
                                         return;
                                     }
                                 }

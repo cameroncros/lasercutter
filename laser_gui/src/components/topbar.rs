@@ -19,7 +19,7 @@ fn save(workspace: &mut Signal<Workspace>) -> anyhow::Result<()> {
 }
 
 #[component]
-pub fn TopBar(workspace: Signal<Workspace>, errormsg: Signal<String>) -> Element {
+pub fn TopBar(workspace: Signal<Workspace>, msglog: Signal<Vec<String>>) -> Element {
     rsx! {
         div { class: TOP_BAR_CLASSES,
             div { class: TOP_BAR_TITLE_CONTAINER_CLASSES,
@@ -31,7 +31,7 @@ pub fn TopBar(workspace: Signal<Workspace>, errormsg: Signal<String>) -> Element
                     class: MENU_BUTTON_CLASSES,
                     onclick: move |_| {
                         if let Err(e) = new(&mut workspace) {
-                            errormsg.set(e.to_string())
+                            msglog.with_mut(|v| v.push(e.to_string()));
                         }
                     },
                     "New"
@@ -48,7 +48,7 @@ pub fn TopBar(workspace: Signal<Workspace>, errormsg: Signal<String>) -> Element
                                         workspace.set(ws);
                                     }
                                     Err(e) => {
-                                        errormsg.set(e.to_string());
+                                        msglog.with_mut(|v| v.push(e.to_string()));
                                     }
                                 }
                             }
@@ -60,7 +60,7 @@ pub fn TopBar(workspace: Signal<Workspace>, errormsg: Signal<String>) -> Element
                     class: MENU_BUTTON_CLASSES,
                     onclick: move |_| {
                         if let Err(e) = save(&mut workspace) {
-                            errormsg.set(e.to_string())
+                            msglog.with_mut(|v| v.push(e.to_string()));
                         }
                     },
                     "Save"

@@ -28,27 +28,27 @@ fn main() {
 #[component]
 fn App() -> Element {
     let workspace = use_signal(|| Workspace::init(100.0, 100.0));
-    let errormsg = use_signal(String::new);
+    let msglog = use_signal(Vec::new);
     let rendertime = use_signal(String::new);
 
     rsx! {
         document::Link { rel: "icon", href: FAVICON }
         document::Link { rel: "stylesheet", href: TAILWIND_CSS }
 
-        div { class: "h-screen flex flex-col",
-            TopBar { workspace, errormsg }
+        div { class: "h-screen flex flex-col overflow-hidden",
+            TopBar { workspace, msglog }
 
-            div { class: "v-screen flex flex-row",
-                LeftBar { workspace, errormsg },
+            div { class: "flex-1 flex flex-row overflow-hidden",
+                LeftBar { workspace, msglog },
                 WorkspaceView {
                     workspace,
                     rendertime,
-                    errormsg,
+                    msglog,
                 },
                 RightBar {}
             }
 
-            StatusBar { errormsg, rendertime }
+            StatusBar { msglog, rendertime }
         }
     }
 }
