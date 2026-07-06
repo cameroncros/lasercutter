@@ -1,8 +1,7 @@
 use std::io;
-use std::sync::OnceLock;
+use std::sync::{LazyLock, Mutex};
 use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
 use tracing::level_filters::LevelFilter;
-use tracing_subscriber::filter::FromEnvError;
 use tracing_subscriber::fmt::MakeWriter;
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::EnvFilter;
@@ -40,27 +39,28 @@ impl MakeWriter<'_> for LogMaker {
     }
 }
 
-pub static mut LOG_RX: OnceLock<UnboundedReceiver<String>> = OnceLock::new();
+pub static LOG_RX: LazyLock<Mutex<Option<UnboundedReceiver<String>>>> =
+    LazyLock::new(|| Mutex::new(None));
 
-pub unsafe fn init_tracing() {
-    LOG_RX.get_or_init(|| {
-        let (tx, rx) = unbounded_channel();
+pub fn init_tracing() {
+    let (tx, rx) = unbounded_channel();
 
-        let filter = EnvFilter::builder()
-            .with_env_var("RUST_LOG")
-            .from_env_lossy()
-            // Set the base level when not matched by other directives to WARN.
-            .add_directive(LevelFilter::WARN.into())
-            // Set the max level for `my_crate::my_mod` to DEBUG, overriding
-            // any directives parsed from the env variable.
-            .add_directive("dioxus=off".parse().unwrap());
+    let filter = EnvFilter::builder()
+        .with_env_var("RUST_LOG")
+        .from_env_lossy()
+        // Set the base level when not matched by other directives to WARN.
+        .add_directive(LevelFilter::WARN.into())
+        // Set the max level for `my_crate::my_mod` to DEBUG, overriding
+        // any directives parsed from the env variable.
+        .add_directive("dioxus=off".parse().unwrap());
 
-        tracing_subscriber::fmt()
-            .with_target(true)
-            .with_thread_names(true)
-            .with_writer(LogMaker { tx })
-            .with_env_filter(filter)
-            .init();
-        rx
-    });
+    tracing_subscriber::fmt()
+        .with_target(true)
+        .with_thread_names(true)
+        .with_writer(LogMaker { tx })
+        .with_env_filter(filter)
+        .init();
+
+    let mut lock = (*LOG_RX).lock().unwrap();
+    *lock = Some(rx);
 }

@@ -14,8 +14,10 @@ pub const LEFT_BAR_CLASSES: &str = "bg-gray-500 p-3 flex flex-col gap-2 overflow
 pub const STATUS_BAR_CLASSES: &str =
     "bg-gray-900 text-gray-100 px-4 py-2 text-sm flex items-center justify-between";
 pub const STATUS_BAR_SUBTEXT_CLASSES: &str = "text-gray-400";
-pub const LOG_WINDOW_OVERLAY_CLASSES: &str = "fixed flex items-center justify-center z-[99]";
-pub const LOG_WINDOW_CLASSES: &str = "bg-gray-800 border border-gray-600 w-3/4 h-3/4 flex flex-col";
+pub const LOG_WINDOW_OVERLAY_CLASSES: &str =
+    "fixed w-full h-1/3 flex items-center justify-center z-[99]";
+pub const LOG_WINDOW_CLASSES: &str =
+    "bg-gray-800 border border-gray-600 w-full h-full flex flex-col";
 pub const LOG_WINDOW_CONTENT_CLASSES: &str =
     "flex-1 overflow-auto p-4 font-mono text-sm text-gray-200";
 pub const LOG_WINDOW_CLOSE_BUTTON_CLASSES: &str =

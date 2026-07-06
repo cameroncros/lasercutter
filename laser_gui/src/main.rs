@@ -21,9 +21,7 @@ const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
 fn main() {
     // The `launch` function is the main entry point for a dioxus app. It takes a component and renders it with the platform feature
     // you have enabled
-    unsafe {
-        init_tracing();
-    }
+    init_tracing();
     launch(App);
 }
 
@@ -39,13 +37,21 @@ fn App() -> Element {
     let mut show_log = use_signal(|| true);
 
     use_coroutine(move |_: UnboundedReceiver<String>| async move {
-        unsafe {
-            while let Some(msg) = LOG_RX.get_mut().unwrap().recv().await {
-                // Update the signal. Dioxus handles the re-render automatically.
-                msglog.push(msg);
+        loop {
+            let recv = LOG_RX.lock().unwrap().take();
+            if let Some(mut rx) = recv {
+                loop {
+                    if let Some(msg) = rx.recv().await {
+                        msglog.push(msg);
+                    }
+                }
+            } else {
+                tokio::time::sleep(std::time::Duration::from_millis(100)).await;
             }
         }
     });
+
+    error!("Hello World");
 
     rsx! {
         document::Link { rel: "icon", href: FAVICON }
@@ -73,7 +79,6 @@ fn App() -> Element {
         if show_log() {
             LogWindow {
                 msglog,
-                on_close: move |_| show_log.set(false)
             }
         }
     }

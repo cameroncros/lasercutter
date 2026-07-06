@@ -2,7 +2,7 @@ use crate::style::*;
 use dioxus::prelude::*;
 
 #[component]
-pub fn LogWindow(msglog: Signal<Vec<String>>, on_close: EventHandler<()>) -> Element {
+pub fn LogWindow(msglog: Signal<Vec<String>>) -> Element {
     rsx! {
         div { class: LOG_WINDOW_OVERLAY_CLASSES,
             style: "bottom: anchor(--status-bar top); left: anchor(--status-bar left)",
