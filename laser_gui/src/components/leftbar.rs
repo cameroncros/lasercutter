@@ -1,13 +1,13 @@
 use crate::components::operationslist::CutList;
-use crate::style::MENU_BUTTON_CLASSES;
 use crate::style::LEFT_BAR_CLASSES;
+use crate::style::MENU_BUTTON_CLASSES;
 use dioxus::prelude::*;
 use laser_cutter::gcode_generator::operation::cut::Cut;
 use laser_cutter::gcode_generator::operation::raster::Raster;
 use laser_cutter::gcode_generator::workspace::Workspace;
 
 #[component]
-pub fn LeftBar(workspace: Signal<Workspace>, msglog: Signal<Vec<String>>) -> Element {
+pub fn LeftBar(workspace: Signal<Workspace>) -> Element {
     rsx! {
         div { class: LEFT_BAR_CLASSES,
             CutList { workspace }
@@ -26,8 +26,7 @@ pub fn LeftBar(workspace: Signal<Workspace>, msglog: Signal<Vec<String>>) -> Ele
                                 match Cut::from_svg(file.path()) {
                                     Ok(cut) => ws.add_operation(cut),
                                     Err(e) => {
-                                        msglog
-                                            .with_mut(|v| v.push(format!("Failed to load: {:?} - {}", file.path(), e)));
+                                        error!("Failed to load: {:?} - {}", file.path(), e);
                                         return;
                                     }
                                 }
@@ -35,8 +34,7 @@ pub fn LeftBar(workspace: Signal<Workspace>, msglog: Signal<Vec<String>>) -> Ele
                                 match Raster::from_image(file.path()) {
                                     Ok(cut) => ws.add_operation(cut),
                                     Err(e) => {
-                                        msglog
-                                            .with_mut(|v| v.push(format!("Failed to load: {:?} - {}", file.path(), e)));
+                                        error!("Failed to load: {:?} - {}", file.path(), e);
                                         return;
                                     }
                                 }

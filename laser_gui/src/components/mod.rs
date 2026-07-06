@@ -1,5 +1,6 @@
 pub(crate) mod connection_controls;
 pub mod leftbar;
+pub mod log_window;
 pub(crate) mod machine_controls;
 pub(crate) mod operationslist;
 pub(crate) mod repeat_button;
@@ -7,4 +8,3 @@ pub mod rightbar;
 pub mod statusbar;
 pub(crate) mod topbar;
 pub mod workspace;
-pub mod log_window;

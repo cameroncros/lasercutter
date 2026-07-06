@@ -1,9 +1,9 @@
+use crate::style::*;
 use dioxus::html::geometry::WheelDelta;
 use dioxus::prelude::*;
 use laser_cutter::gcode_emulator::GCodeEmulator;
 use laser_cutter::gcode_generator::workspace::Workspace;
 use std::time::Duration;
-use crate::style::*;
 
 fn render(workspace: &Workspace) -> anyhow::Result<(String, Duration)> {
     let start = std::time::Instant::now();
@@ -21,23 +21,19 @@ fn render(workspace: &Workspace) -> anyhow::Result<(String, Duration)> {
     let img_url = emu.to_img_url()?;
     let img_time = t2.elapsed();
 
-    // eprintln!(
-    //     "Timing: gcode={:?}, emu={:?}, img={:?}, total={:?}",
-    //     gcode_time,
-    //     emu_time,
-    //     img_time,
-    //     start.elapsed()
-    // );
+    info!(
+        "Timing: gcode={:?}, emu={:?}, img={:?}, total={:?}",
+        gcode_time,
+        emu_time,
+        img_time,
+        start.elapsed()
+    );
 
     Ok((img_url, start.elapsed()))
 }
 
 #[component]
-pub fn WorkspaceView(
-    workspace: Signal<Workspace>,
-    rendertime: Signal<String>,
-    msglog: Signal<Vec<String>>,
-) -> Element {
+pub fn WorkspaceView(workspace: Signal<Workspace>, rendertime: Signal<String>) -> Element {
     let mut zoom = use_signal(|| 1.0f32);
 
     let preview = use_resource(move || async move {
@@ -47,7 +43,7 @@ pub fn WorkspaceView(
                 svg
             }
             Err(e) => {
-                msglog.with_mut(|v| v.push(e.to_string()));
+                error!("Failed to render: {e}");
                 rendertime.set("Failed".into());
                 "".into()
             }

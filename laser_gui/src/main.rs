@@ -3,12 +3,15 @@ use laser_cutter::gcode_generator::workspace::Workspace;
 
 mod components;
 mod style;
+mod tracing_logger;
 
 use crate::components::leftbar::LeftBar;
+use crate::components::log_window::LogWindow;
 use crate::components::rightbar::RightBar;
 use crate::components::statusbar::StatusBar;
 use crate::components::topbar::TopBar;
 use crate::components::workspace::WorkspaceView;
+use crate::tracing_logger::{init_tracing, LOG_RX};
 
 // We can import assets in dioxus with the `asset!` macro. This macro takes a path to an asset relative to the crate root.
 // The macro returns an `Asset` type that will display as the path to the asset in the browser or a local path in desktop bundles.
@@ -18,6 +21,9 @@ const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
 fn main() {
     // The `launch` function is the main entry point for a dioxus app. It takes a component and renders it with the platform feature
     // you have enabled
+    unsafe {
+        init_tracing();
+    }
     launch(App);
 }
 
@@ -28,27 +34,47 @@ fn main() {
 #[component]
 fn App() -> Element {
     let workspace = use_signal(|| Workspace::init(100.0, 100.0));
-    let msglog = use_signal(Vec::new);
+    let mut msglog = use_signal(Vec::new);
     let rendertime = use_signal(String::new);
+    let mut show_log = use_signal(|| true);
+
+    use_coroutine(move |_: UnboundedReceiver<String>| async move {
+        unsafe {
+            while let Some(msg) = LOG_RX.get_mut().unwrap().recv().await {
+                // Update the signal. Dioxus handles the re-render automatically.
+                msglog.push(msg);
+            }
+        }
+    });
 
     rsx! {
         document::Link { rel: "icon", href: FAVICON }
         document::Link { rel: "stylesheet", href: TAILWIND_CSS }
 
         div { class: "h-screen flex flex-col overflow-hidden",
-            TopBar { workspace, msglog }
+            TopBar { workspace }
 
             div { class: "flex-1 flex flex-row overflow-hidden",
-                LeftBar { workspace, msglog },
+                LeftBar { workspace },
                 WorkspaceView {
                     workspace,
                     rendertime,
-                    msglog,
                 },
                 RightBar {}
             }
 
-            StatusBar { msglog, rendertime }
+            StatusBar {
+                msglog,
+                rendertime,
+                show_log,
+                on_toggle_log: move |_| show_log.toggle()
+            }
+        }
+        if show_log() {
+            LogWindow {
+                msglog,
+                on_close: move |_| show_log.set(false)
+            }
         }
     }
 }

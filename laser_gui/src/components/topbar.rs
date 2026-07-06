@@ -1,4 +1,7 @@
-use crate::style::{MENU_BUTTON_CLASSES, TOP_BAR_CLASSES, TOP_BAR_TITLE_CONTAINER_CLASSES, TOP_BAR_TITLE_CLASSES, TOP_BAR_SUBTITLE_CLASSES, TOP_BAR_ACTIONS_CONTAINER_CLASSES};
+use crate::style::{
+    MENU_BUTTON_CLASSES, TOP_BAR_ACTIONS_CONTAINER_CLASSES, TOP_BAR_CLASSES,
+    TOP_BAR_SUBTITLE_CLASSES, TOP_BAR_TITLE_CLASSES, TOP_BAR_TITLE_CONTAINER_CLASSES,
+};
 use dioxus::prelude::*;
 use laser_cutter::gcode_generator::workspace::Workspace;
 
@@ -19,7 +22,7 @@ fn save(workspace: &mut Signal<Workspace>) -> anyhow::Result<()> {
 }
 
 #[component]
-pub fn TopBar(workspace: Signal<Workspace>, msglog: Signal<Vec<String>>) -> Element {
+pub fn TopBar(workspace: Signal<Workspace>) -> Element {
     rsx! {
         div { class: TOP_BAR_CLASSES,
             div { class: TOP_BAR_TITLE_CONTAINER_CLASSES,
@@ -31,7 +34,7 @@ pub fn TopBar(workspace: Signal<Workspace>, msglog: Signal<Vec<String>>) -> Elem
                     class: MENU_BUTTON_CLASSES,
                     onclick: move |_| {
                         if let Err(e) = new(&mut workspace) {
-                            msglog.with_mut(|v| v.push(e.to_string()));
+                            error!("Failed to create new workspace: {e}");
                         }
                     },
                     "New"
@@ -48,7 +51,7 @@ pub fn TopBar(workspace: Signal<Workspace>, msglog: Signal<Vec<String>>) -> Elem
                                         workspace.set(ws);
                                     }
                                     Err(e) => {
-                                        msglog.with_mut(|v| v.push(e.to_string()));
+                            error!("Failed to create load workspace: {e}");
                                     }
                                 }
                             }
@@ -60,7 +63,7 @@ pub fn TopBar(workspace: Signal<Workspace>, msglog: Signal<Vec<String>>) -> Elem
                     class: MENU_BUTTON_CLASSES,
                     onclick: move |_| {
                         if let Err(e) = save(&mut workspace) {
-                            msglog.with_mut(|v| v.push(e.to_string()));
+                            error!("Failed to create save workspace: {e}");
                         }
                     },
                     "Save"

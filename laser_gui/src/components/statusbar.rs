@@ -1,28 +1,25 @@
 use crate::style::{STATUS_BAR_CLASSES, STATUS_BAR_SUBTEXT_CLASSES};
-use crate::components::log_window::LogWindow;
 use dioxus::prelude::*;
 
 #[component]
-pub fn StatusBar(msglog: Signal<Vec<String>>, rendertime: Signal<String>) -> Element {
-    let mut show_log = use_signal(|| false);
-    let status_msg = if !msglog().is_empty() {
-        msglog().last().unwrap_or(&"".to_string()).clone()
-    } else {
-        String::new()
+pub fn StatusBar(
+    msglog: Signal<Vec<String>>,
+    rendertime: Signal<String>,
+    show_log: Signal<bool>,
+    on_toggle_log: EventHandler<()>,
+) -> Element {
+    let status_msg = match msglog.last() {
+        None => String::new(),
+        Some(s) => s.clone(),
     };
 
     rsx! {
-        div { 
+        div {
             class: STATUS_BAR_CLASSES,
-            onclick: move |_| show_log.toggle(),
+            style: "anchor-name: --status-bar",
+            onclick: move |_| on_toggle_log.call(()),
             span { "Status: {status_msg}" }
             span { class: STATUS_BAR_SUBTEXT_CLASSES, "{rendertime}" }
-        }
-        if show_log() {
-            LogWindow { 
-                msglog, 
-                on_close: move |_| show_log.set(false) 
-            }
         }
     }
 }
