@@ -20,8 +20,6 @@ pub const LOG_WINDOW_CLASSES: &str =
     "bg-gray-800 border border-gray-600 w-full h-full flex flex-col";
 pub const LOG_WINDOW_CONTENT_CLASSES: &str =
     "flex-1 overflow-auto p-4 font-mono text-sm text-gray-200";
-pub const LOG_WINDOW_CLOSE_BUTTON_CLASSES: &str =
-    "bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-3 rounded";
 pub const RIGHT_BAR_CLASSES: &str = "w-64 bg-gray-600 p-3 text-white";
 pub const GRID_CONTAINER_CLASSES: &str = "px-2";
 pub const GRID_ROW_CLASSES: &str = "flex -mx-2";

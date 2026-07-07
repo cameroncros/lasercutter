@@ -108,13 +108,10 @@ impl Renderer for SvgRenderer {
         end: Coord,
         render: RenderSettings,
     ) -> anyhow::Result<()> {
-        match &self.last_line {
-            None => {}
-            Some((_, last_coord, last_render)) => {
-                if *last_render != render || *last_coord != start {
-                    self.close_last()?;
-                }
-            }
+        if let Some((_, last_coord, last_render)) = &self.last_line
+            && (*last_render != render || *last_coord != start)
+        {
+            self.close_last()?;
         }
 
         match self.last_line.take() {

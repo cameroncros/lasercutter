@@ -1,16 +1,17 @@
 use crate::style::{STATUS_BAR_CLASSES, STATUS_BAR_SUBTEXT_CLASSES};
+use crate::tracing_logger::LogEvent;
 use dioxus::prelude::*;
 
 #[component]
 pub fn StatusBar(
-    msglog: Signal<Vec<String>>,
+    msglog: Signal<Vec<LogEvent>>,
     rendertime: Signal<String>,
     show_log: Signal<bool>,
     on_toggle_log: EventHandler<()>,
 ) -> Element {
     let status_msg = match msglog.last() {
         None => String::new(),
-        Some(s) => s.clone(),
+        Some(event) => format!("[{:?}] {}: {}", event.level, event.target, event.message),
     };
 
     rsx! {

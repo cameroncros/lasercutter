@@ -1,5 +1,6 @@
 pub(crate) mod connection_controls;
 pub mod leftbar;
+mod log_entry;
 pub mod log_window;
 pub(crate) mod machine_controls;
 pub(crate) mod operationslist;

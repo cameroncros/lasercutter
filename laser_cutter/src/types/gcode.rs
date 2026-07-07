@@ -109,7 +109,7 @@ impl GCode {
     pub fn load(file: &str) -> anyhow::Result<GCode> {
         let lines = std::fs::read_to_string(file)?
             .lines()
-            .map(|l| GCodeLine::from_str(l))
+            .map(GCodeLine::from_str)
             .collect::<anyhow::Result<Vec<GCodeLine>>>()?;
         Ok(GCode { lines })
     }

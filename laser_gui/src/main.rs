@@ -1,3 +1,5 @@
+#[cfg(feature = "desktop")]
+use dioxus::desktop::{Config, WindowBuilder};
 use dioxus::prelude::*;
 use laser_cutter::gcode_generator::workspace::Workspace;
 
@@ -11,7 +13,7 @@ use crate::components::rightbar::RightBar;
 use crate::components::statusbar::StatusBar;
 use crate::components::topbar::TopBar;
 use crate::components::workspace::WorkspaceView;
-use crate::tracing_logger::{init_tracing, LOG_RX};
+use crate::tracing_logger::{init_tracing, LogEvent, LOG_RX};
 
 // We can import assets in dioxus with the `asset!` macro. This macro takes a path to an asset relative to the crate root.
 // The macro returns an `Asset` type that will display as the path to the asset in the browser or a local path in desktop bundles.
@@ -22,7 +24,19 @@ fn main() {
     // The `launch` function is the main entry point for a dioxus app. It takes a component and renders it with the platform feature
     // you have enabled
     init_tracing();
-    launch(App);
+
+    #[cfg(feature = "desktop")]
+    LaunchBuilder::new()
+        .with_cfg(desktop! {
+            Config::new().with_window(
+                WindowBuilder::new()
+                    .with_always_on_top(false)
+                    .with_title("Laser GUI")
+            )
+        })
+        .launch(App);
+    #[cfg(not(feature = "desktop"))]
+    launch(App)
 }
 
 /// App is the main component of our app. Components are the building blocks of dioxus apps. Each component is a function
@@ -36,13 +50,13 @@ fn App() -> Element {
     let rendertime = use_signal(String::new);
     let mut show_log = use_signal(|| true);
 
-    use_coroutine(move |_: UnboundedReceiver<String>| async move {
+    use_coroutine(move |_: UnboundedReceiver<LogEvent>| async move {
         loop {
             let recv = LOG_RX.lock().unwrap().take();
             if let Some(mut rx) = recv {
                 loop {
-                    if let Some(msg) = rx.recv().await {
-                        msglog.push(msg);
+                    if let Some(event) = rx.recv().await {
+                        msglog.push(event);
                     }
                 }
             } else {
@@ -52,6 +66,10 @@ fn App() -> Element {
     });
 
     error!("Hello World");
+    info!("Hello World");
+    trace!("Hello World");
+    debug!("Hello World");
+    warn!("Hello World");
 
     rsx! {
         document::Link { rel: "icon", href: FAVICON }
